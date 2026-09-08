@@ -2,43 +2,93 @@
   "name": "@mohamedhabibwork/notifykit",
   "version": "0.1.0",
   "description": "Unified TypeScript notifications across push, web push, email, messaging, and custom providers.",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "sideEffects": false,
-  "engines": { "node": ">=20" },
-  "publishConfig": { "access": "public" },
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./fcm": { "types": "./dist/fcm.d.ts", "import": "./dist/fcm.js" },
-    "./huawei": { "types": "./dist/huawei.d.ts", "import": "./dist/huawei.js" },
-    "./webpush": { "types": "./dist/webpush.d.ts", "import": "./dist/webpush.js" },
-    "./email": { "types": "./dist/email.d.ts", "import": "./dist/email.js" },
-    "./telegram": { "types": "./dist/telegram.d.ts", "import": "./dist/telegram.js" },
-    "./apns": { "types": "./dist/apns.d.ts", "import": "./dist/apns.js" },
-    "./custom": { "types": "./dist/custom.d.ts", "import": "./dist/custom.js" },
-    "./testing": { "types": "./dist/testing.d.ts", "import": "./dist/testing.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./fcm": {
+      "types": "./dist/fcm.d.ts",
+      "import": "./dist/fcm.js"
+    },
+    "./huawei": {
+      "types": "./dist/huawei.d.ts",
+      "import": "./dist/huawei.js"
+    },
+    "./webpush": {
+      "types": "./dist/webpush.d.ts",
+      "import": "./dist/webpush.js"
+    },
+    "./email": {
+      "types": "./dist/email.d.ts",
+      "import": "./dist/email.js"
+    },
+    "./telegram": {
+      "types": "./dist/telegram.d.ts",
+      "import": "./dist/telegram.js"
+    },
+    "./apns": {
+      "types": "./dist/apns.d.ts",
+      "import": "./dist/apns.js"
+    },
+    "./custom": {
+      "types": "./dist/custom.d.ts",
+      "import": "./dist/custom.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "check": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "verify": "npm run format:check && npm run lint && npm run check && npm test && npm run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "peerDependencies": {
-    "firebase-admin": "^12.0.0 || ^13.0.0",
-    "nodemailer": "^6.9.0 || ^7.0.0",
-    "web-push": "^3.6.0",
-    "@parse/node-apn": "^6.0.0"
-  },
-  "peerDependenciesMeta": {
-    "firebase-admin": { "optional": true },
-    "nodemailer": { "optional": true },
-    "web-push": { "optional": true },
-    "@parse/node-apn": { "optional": true }
-  },
   "devDependencies": {
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3",
     "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@parse/node-apn": "^6.0.0",
+    "firebase-admin": "^12.0.0 || ^13.0.0",
+    "nodemailer": "^6.9.0 || ^7.0.0",
+    "web-push": "^3.6.0"
+  },
+  "peerDependenciesMeta": {
+    "firebase-admin": {
+      "optional": true
+    },
+    "nodemailer": {
+      "optional": true
+    },
+    "web-push": {
+      "optional": true
+    },
+    "@parse/node-apn": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

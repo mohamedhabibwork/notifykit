@@ -1,3 +1,9 @@
-import { Notifier } from './core/notifier.js'; import { createEmailProvider } from './drivers/email/driver.js'; import type { EmailConfig, EmailNotifierConfig } from './drivers/email/config.js'; import type { EmailAddress, EmailNativeOptions, EmailRecipient, EmailResponse } from './drivers/email/types.js';
-export type { EmailAddress, EmailConfig, EmailNotifierConfig, EmailNativeOptions, EmailRecipient, EmailResponse }; export type EmailNotifier = Notifier<'email', EmailRecipient, EmailConfig, EmailNativeOptions, EmailResponse>;
-export async function createEmailNotifier(config: EmailNotifierConfig): Promise<EmailNotifier> { return new Notifier(await createEmailProvider({ ...config, type: 'email' })); }
+import { Notifier } from './core/notifier.js';
+import { createEmailProvider } from './drivers/email/driver.js';
+import type { EmailConfig, EmailNotifierConfig } from './drivers/email/config.js';
+import type { EmailAddress, EmailNativeOptions, EmailRecipient, EmailResponse } from './drivers/email/types.js';
+export type { EmailAddress, EmailConfig, EmailNotifierConfig, EmailNativeOptions, EmailRecipient, EmailResponse };
+export type EmailNotifier = Notifier<'email', EmailRecipient, EmailConfig, EmailNativeOptions, EmailResponse>;
+export async function createEmailNotifier(config: EmailNotifierConfig): Promise<EmailNotifier> {
+  return new Notifier(await createEmailProvider({ ...config, type: 'email' }));
+}

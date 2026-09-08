@@ -18,14 +18,21 @@ Install only the peer dependency required by the provider you use: `firebase-adm
 import { createTelegramNotifier } from '@mohamedhabibwork/notifykit/telegram';
 
 const notifier = await createTelegramNotifier({ botToken: process.env.TELEGRAM_BOT_TOKEN! });
-await notifier.send({ to: { chatId: 1234 }, notification: { body: '<b>Deployment complete</b>' }, native: { parse_mode: 'HTML' } });
+await notifier.send({
+  to: { chatId: 1234 },
+  notification: { body: '<b>Deployment complete</b>' },
+  native: { parse_mode: 'HTML' },
+});
 ```
 
 ## Manager
 
 ```ts
 import { createNotificationManager } from '@mohamedhabibwork/notifykit';
-const notifications = createNotificationManager({ providers: { alerts: { type: 'telegram', botToken: '...' } }, default: 'alerts' });
+const notifications = createNotificationManager({
+  providers: { alerts: { type: 'telegram', botToken: '...' } },
+  default: 'alerts',
+});
 await (await notifications.default()).send({ to: { chatId: 1 }, notification: { body: 'Hello' } });
 ```
 

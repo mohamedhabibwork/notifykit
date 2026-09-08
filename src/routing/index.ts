@@ -1,2 +1,15 @@
-export interface NotificationRoute<TEvent, TResult = readonly unknown[]> { (event: TEvent): Promise<TResult> | TResult; }
-export function createNotificationRouter<TRoutes extends Record<string, NotificationRoute<never, unknown>>>(options: { routes: TRoutes }) { return { async resolve<TKey extends keyof TRoutes>(name: TKey, event: Parameters<TRoutes[TKey]>[0]): Promise<Awaited<ReturnType<TRoutes[TKey]>>> { return options.routes[name]!(event) as Awaited<ReturnType<TRoutes[TKey]>>; } }; }
+export interface NotificationRoute<TEvent, TResult = readonly unknown[]> {
+  (event: TEvent): Promise<TResult> | TResult;
+}
+export function createNotificationRouter<TRoutes extends Record<string, NotificationRoute<never, unknown>>>(options: {
+  routes: TRoutes;
+}) {
+  return {
+    async resolve<TKey extends keyof TRoutes>(
+      name: TKey,
+      event: Parameters<TRoutes[TKey]>[0],
+    ): Promise<Awaited<ReturnType<TRoutes[TKey]>>> {
+      return options.routes[name]!(event) as Awaited<ReturnType<TRoutes[TKey]>>;
+    },
+  };
+}

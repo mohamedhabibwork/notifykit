@@ -1,24 +1,49 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   node:
+    name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     strategy:
-      matrix: { node: ['20', '22'] }
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24, 26]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version: ${{ matrix.node }}, cache: npm }
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
       - run: npm ci
-      - run: npm run check && npm test && npm run build
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
   typescript:
+    name: TypeScript ${{ matrix.typescript }}
     runs-on: ubuntu-latest
     strategy:
-      matrix: { typescript: ['5.9', '6', '7'], node: ['20',''] }
+      fail-fast: false
+      matrix:
+        typescript: ['5.9', '6', '7']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
-        with: { node-version: '22', cache: npm }
+        with:
+          node-version: 26
+          cache: npm
       - run: npm ci
       - run: npm install --no-save typescript@${{ matrix.typescript }}
       - run: npm run check

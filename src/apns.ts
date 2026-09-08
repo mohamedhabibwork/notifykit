@@ -1,0 +1,3 @@
+import { Notifier } from './core/notifier.js'; import { createApnsProvider } from './drivers/apns/driver.js'; import type { ApnsConfig, ApnsNotifierConfig } from './drivers/apns/config.js'; import type { ApnsNativeOptions, ApnsRecipient, ApnsResponse } from './drivers/apns/types.js';
+export type { ApnsConfig, ApnsNotifierConfig, ApnsNativeOptions, ApnsRecipient, ApnsResponse }; export type ApnsNotifier = Notifier<'apns', ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>;
+export async function createApnsNotifier(config: ApnsNotifierConfig): Promise<ApnsNotifier> { return new Notifier(await createApnsProvider({ ...config, type: 'apns' })); }

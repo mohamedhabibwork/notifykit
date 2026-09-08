@@ -1,0 +1,19 @@
+name: Runtime smoke tests
+on: [push, pull_request]
+jobs:
+  bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build && bun -e "import('./dist/testing.js').then(async ({createFakeNotifier}) => { await createFakeNotifier().send({to:{id:'test'},notification:{title:'ok'}}) })"
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci && npm run build
+      - run: deno eval "const { createFakeNotifier } = await import('file://' + Deno.cwd() + '/dist/testing.js'); await createFakeNotifier().send({to:{id:'test'},notification:{title:'ok'}});"

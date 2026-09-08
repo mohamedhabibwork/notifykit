@@ -51,7 +51,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "check": "tsc --noEmit",
     "lint": "oxlint --deny-warnings --report-unused-disable-directives",
     "lint:fix": "oxlint --fix",
@@ -64,7 +64,7 @@
   "devDependencies": {
     "oxfmt": "^0.67.0",
     "oxlint": "^1.82.0",
-    "tsup": "^8.3.5",
+    "tsup": "8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^3.0.0"
   },

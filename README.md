@@ -1,5 +1,11 @@
 # @mohamedhabibwork/notifykit
 
+[![npm version](https://img.shields.io/npm/v/%40mohamedhabibwork%2Fnotifykit?logo=npm)](https://www.npmjs.com/package/@mohamedhabibwork/notifykit)
+[![CI](https://github.com/mohamedhabibwork/notifykit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/ci.yml)
+[![Runtime smoke tests](https://github.com/mohamedhabibwork/notifykit/actions/workflows/runtimes.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/runtimes.yml)
+[![CodeQL](https://github.com/mohamedhabibwork/notifykit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/codeql.yml)
+[![license](https://img.shields.io/npm/l/%40mohamedhabibwork%2Fnotifykit)](./LICENSE)
+
 > Unified TypeScript notifications across push, web push, email, messaging, and custom providers—with strongly typed native provider options preserved instead of flattened into a lowest-common-denominator API.
 
 NotifyKit gives applications one small notification contract while keeping advanced provider capabilities under `native`. Change the configured provider and TypeScript changes the valid recipient shape, native payload, response type, and capabilities with it.

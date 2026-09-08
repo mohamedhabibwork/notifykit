@@ -12,6 +12,19 @@ void telegram.then((notifier) =>
     native: { android: { priority: 'high' } },
   }),
 );
+const fcm = createNotifier({
+  type: 'fcm',
+  credential: { projectId: 'project', clientEmail: 'service@example.com', privateKey: 'private-key' },
+});
+void fcm.then(async (notifier) => {
+  const token = await notifier.native()?.getAccessToken();
+  const expiresAt = token?.expiresAt;
+  void expiresAt;
+  await notifier.send({
+    to: { token: 'device-token' },
+    native: { apns: { payload: { aps: { mutableContent: true } } } },
+  });
+});
 const manager = createNotificationManager({
   providers: {
     alerts: { type: 'telegram', botToken: 'token' },

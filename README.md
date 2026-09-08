@@ -122,7 +122,10 @@ await fcm.send({
   data: { conversationId: '123' },
   native: {
     android: { priority: 'high' },
-    apns: { payload: { aps: { sound: 'default' } } },
+    apns: {
+      payload: { aps: { sound: 'default', mutableContent: true } },
+      fcmOptions: { imageUrl: 'https://cdn.example.com/order-image.png' },
+    },
   },
 });
 
@@ -133,6 +136,26 @@ await fcm.send({
 ```
 
 Recipients may be `{ token }`, `{ tokens }`, `{ topic }`, or `{ condition }`. `fcm.native()` returns the Firebase Messaging client.
+
+### Access tokens and mutable content
+
+For rich iOS notifications, use `native.apns.payload.aps.mutableContent: true` together with `native.apns.fcmOptions.imageUrl`. This enables the app's Notification Service Extension to process the attachment before display. `fcm.native()` also exposes `getAccessToken()` for direct, authenticated FCM HTTP v1 calls when the SDK abstraction is insufficient.
+
+```ts
+const native = fcm.native();
+const token = await native?.getAccessToken();
+
+await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+  method: 'POST',
+  headers: {
+    authorization: `Bearer ${token?.accessToken}`,
+    'content-type': 'application/json',
+  },
+  body: JSON.stringify({ message: { token: 'device-token', data: { event: 'sync' } } }),
+});
+```
+
+FCM credentials already cache tokens internally. Pass `auth.tokenCache` to share NotifyKit's developer-facing token cache across notifier instances; cached tokens refresh before `expiresAt`, using `auth.refreshSkewMs` (30 seconds by default).
 
 ### Huawei Push Kit
 
@@ -160,6 +183,29 @@ await huawei.send({
 ```
 
 Recipients may be `{ token }`, `{ tokens }`, or `{ topic }`.
+
+Huawei tokens are cached according to the OAuth `expires_in` duration. Use the native token client for a custom Huawei API request, or provide a cache for reuse across notifier instances:
+
+```ts
+const cache = {
+  async get() {
+    return redis.get('huawei-access-token');
+  },
+  async set(token: { accessToken: string; expiresAt: number }) {
+    await redis.set('huawei-access-token', token);
+  },
+};
+
+const huawei = await createHuaweiNotifier({
+  appId,
+  appSecret,
+  auth: { tokenCache: cache, refreshSkewMs: 30_000 },
+});
+
+const token = await huawei.native()?.getAccessToken();
+```
+
+For a Huawei iOS payload that requires a Notification Service Extension, set `native.apns.payload.aps.mutableContent: true` (or the raw APNs `'mutable-content': 1` spelling).
 
 ### Web Push
 

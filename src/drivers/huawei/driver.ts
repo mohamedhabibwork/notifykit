@@ -8,16 +8,31 @@ import type { NotificationProvider } from '../../core/provider.js';
 import type { NotificationMessage, NotificationResult, SendOptions } from '../../core/types.js';
 import { withTimeout } from '../../core/utils.js';
 import type { HuaweiConfig } from './config.js';
-import type { HuaweiNativeOptions, HuaweiRecipient, HuaweiResponse } from './types.js';
+import type {
+  HuaweiAccessToken,
+  HuaweiNativeClient,
+  HuaweiNativeOptions,
+  HuaweiRecipient,
+  HuaweiResponse,
+} from './types.js';
 export async function createHuaweiProvider(
   config: HuaweiConfig,
 ): Promise<NotificationProvider<'huawei', HuaweiRecipient, HuaweiConfig, HuaweiNativeOptions, HuaweiResponse>> {
   const endpoint = (config.endpoint ?? 'https://push-api.cloud.huawei.com').replace(/\/$/, '');
   const authEndpoint = (config.authEndpoint ?? 'https://oauth-login.cloud.huawei.com').replace(/\/$/, '');
-  let localToken: { accessToken: string; expiresAt: number } | undefined;
-  const accessToken = async (options?: SendOptions) => {
-    const cached = (await config.auth?.tokenCache?.get()) ?? localToken;
-    if (cached && cached.expiresAt > Date.now() + 30_000) return cached.accessToken;
+  const refreshSkewMs = config.auth?.refreshSkewMs ?? 30_000;
+  if (!Number.isFinite(refreshSkewMs) || refreshSkewMs < 0)
+    throw new NotificationProviderError('Huawei auth.refreshSkewMs must be a non-negative finite number.', {
+      provider: 'huawei',
+      retryable: false,
+    });
+  let localToken: HuaweiAccessToken | undefined;
+  const getAccessToken = async (options?: SendOptions): Promise<HuaweiAccessToken> => {
+    const externalToken = await config.auth?.tokenCache?.get();
+    const cached = [localToken, externalToken]
+      .filter((token): token is HuaweiAccessToken => token != null && token.expiresAt > Date.now() + refreshSkewMs)
+      .sort((left, right) => right.expiresAt - left.expiresAt)[0];
+    if (cached) return cached;
     let response: Response;
     try {
       response = await withTimeout(
@@ -53,7 +68,7 @@ export async function createHuaweiProvider(
     const token = { accessToken: payload.access_token, expiresAt: Date.now() + (payload.expires_in ?? 3000) * 1000 };
     localToken = token;
     await config.auth?.tokenCache?.set(token);
-    return token.accessToken;
+    return token;
   };
   return {
     name: 'huawei',
@@ -67,12 +82,12 @@ export async function createHuaweiProvider(
       ttl: true,
       priority: true,
     },
-    native: () => ({ accessToken }),
+    native: (): HuaweiNativeClient => ({ getAccessToken }),
     async send(
       message: NotificationMessage<HuaweiRecipient, HuaweiNativeOptions>,
       options?: SendOptions,
     ): Promise<NotificationResult<'huawei', HuaweiResponse>> {
-      const token = await accessToken(options);
+      const token = await getAccessToken(options);
       const recipient =
         'token' in message.to ? [message.to.token] : 'tokens' in message.to ? [...message.to.tokens] : undefined;
       const body = {
@@ -97,7 +112,7 @@ export async function createHuaweiProvider(
           (signal) =>
             fetch(`${endpoint}/v1/${config.appId}/messages:send`, {
               method: 'POST',
-              headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+              headers: { authorization: `Bearer ${token.accessToken}`, 'content-type': 'application/json' },
               body: JSON.stringify(body),
               signal,
             }),

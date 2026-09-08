@@ -9,8 +9,11 @@ import type {
 } from '../../core/types.js';
 import { withTimeout } from '../../core/utils.js';
 import type { FcmConfig } from './config.js';
-import type { FcmNativeOptions, FcmRecipient, FcmResponse } from './types.js';
+import type { FcmAccessToken, FcmNativeClient, FcmNativeOptions, FcmRecipient, FcmResponse } from './types.js';
 type FirebaseApp = { name?: string };
+type FirebaseCredential = {
+  getAccessToken(): Promise<{ access_token: string; expires_in?: number }>;
+};
 type FcmBatchResponse = { responses: Array<{ success: boolean; messageId?: string; error?: unknown }> };
 type FirebaseMessaging = {
   send(message: Record<string, unknown>): Promise<string>;
@@ -22,7 +25,7 @@ export async function createFcmProvider(
 ): Promise<NotificationProvider<'fcm', FcmRecipient, FcmConfig, FcmNativeOptions, FcmResponse>> {
   let admin: {
     initializeApp(options: unknown, name?: string): FirebaseApp;
-    cert(value: unknown): unknown;
+    cert(value: unknown): FirebaseCredential;
     app?(name?: string): FirebaseApp;
     messaging(app?: FirebaseApp): FirebaseMessaging;
   };
@@ -35,6 +38,7 @@ export async function createFcmProvider(
     );
   }
   const credential = 'serviceAccount' in config.credential ? config.credential.serviceAccount : config.credential;
+  const firebaseCredential = admin.cert(credential);
   let app: FirebaseApp;
   try {
     app =
@@ -42,15 +46,35 @@ export async function createFcmProvider(
         ? admin.app(config.appName)
         : admin.initializeApp(
             {
-              credential: admin.cert(credential),
+              credential: firebaseCredential,
               projectId: 'projectId' in credential ? credential.projectId : undefined,
             },
             config.appName,
           );
   } catch {
-    app = admin.initializeApp({ credential: admin.cert(credential) }, config.appName);
+    app = admin.initializeApp({ credential: firebaseCredential }, config.appName);
   }
   const messaging = admin.messaging(app);
+  const refreshSkewMs = config.auth?.refreshSkewMs ?? 30_000;
+  if (!Number.isFinite(refreshSkewMs) || refreshSkewMs < 0)
+    throw new NotificationConfigError('FCM auth.refreshSkewMs must be a non-negative finite number.', {
+      provider: 'fcm',
+      retryable: false,
+    });
+  let localAccessToken: FcmAccessToken | undefined;
+  const getAccessToken = async (): Promise<FcmAccessToken> => {
+    const externalToken = await config.auth?.tokenCache?.get();
+    const cached = [localAccessToken, externalToken]
+      .filter((token): token is FcmAccessToken => token != null && token.expiresAt > Date.now() + refreshSkewMs)
+      .sort((left, right) => right.expiresAt - left.expiresAt)[0];
+    if (cached) return cached;
+    const native = await firebaseCredential.getAccessToken();
+    const expiresInMs = Math.max(0, native.expires_in ?? 300) * 1000;
+    const token = { accessToken: native.access_token, expiresAt: Date.now() + expiresInMs };
+    localAccessToken = token;
+    await config.auth?.tokenCache?.set(token);
+    return token;
+  };
   const toNative = (message: NotificationMessage<FcmRecipient, FcmNativeOptions>): Record<string, unknown> => {
     const target =
       'token' in message.to
@@ -91,7 +115,7 @@ export async function createFcmProvider(
       ttl: true,
       priority: true,
     },
-    native: () => messaging,
+    native: (): FcmNativeClient => ({ app, messaging, getAccessToken }),
     async send(message, options?: SendOptions): Promise<NotificationResult<'fcm', FcmResponse>> {
       try {
         const payload = toNative(message);

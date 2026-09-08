@@ -1,7 +1,7 @@
 import { Notifier } from './core/notifier.js';
-import type { FcmConfig, FcmNativeOptions, FcmRecipient, FcmResponse } from './fcm.js';
+import type { FcmConfig, FcmNotifier } from './fcm.js';
 import { createFcmProvider } from './drivers/fcm/driver.js';
-import type { HuaweiConfig, HuaweiNativeOptions, HuaweiRecipient, HuaweiResponse } from './huawei.js';
+import type { HuaweiConfig, HuaweiNotifier } from './huawei.js';
 import { createHuaweiProvider } from './drivers/huawei/driver.js';
 import type { WebPushConfig, WebPushNativeOptions, WebPushRecipient, WebPushResponse } from './webpush.js';
 import { createWebPushProvider } from './drivers/webpush/driver.js';
@@ -20,9 +20,9 @@ export type BuiltInNotificationConfig =
   | TelegramConfig
   | ApnsConfig;
 export type NotifierForConfig<T> = T extends FcmConfig
-  ? Notifier<'fcm', FcmRecipient, FcmConfig, FcmNativeOptions, FcmResponse>
+  ? FcmNotifier
   : T extends HuaweiConfig
-    ? Notifier<'huawei', HuaweiRecipient, HuaweiConfig, HuaweiNativeOptions, HuaweiResponse>
+    ? HuaweiNotifier
     : T extends WebPushConfig
       ? Notifier<'webpush', WebPushRecipient, WebPushConfig, WebPushNativeOptions, WebPushResponse>
       : T extends EmailConfig

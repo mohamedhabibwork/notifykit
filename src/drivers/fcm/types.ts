@@ -3,6 +3,35 @@ export type FcmRecipient =
   | { tokens: readonly string[] }
   | { topic: string }
   | { condition: string };
+export interface FcmAccessToken {
+  accessToken: string;
+  /** Unix timestamp in milliseconds. */
+  expiresAt: number;
+}
+export interface FcmTokenCache {
+  get(): Promise<FcmAccessToken | undefined>;
+  set(token: FcmAccessToken): Promise<void>;
+}
+export interface FcmApnsOptions {
+  headers?: Record<string, string>;
+  payload?: {
+    aps?: {
+      /** Enables an iOS Notification Service Extension. */
+      mutableContent?: boolean;
+      /** Raw APNs spelling accepted by FCM's HTTP v1 payload. */
+      'mutable-content'?: 1;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  /** FCM-to-APNs options, including the rich-notification image URL. */
+  fcmOptions?: { imageUrl?: string; analyticsLabel?: string };
+}
+export interface FcmNativeClient {
+  app: unknown;
+  messaging: unknown;
+  getAccessToken(): Promise<FcmAccessToken>;
+}
 export interface FcmNativeOptions {
   android?: {
     priority?: 'normal' | 'high';
@@ -10,7 +39,7 @@ export interface FcmNativeOptions {
     collapseKey?: string;
     notification?: Record<string, unknown>;
   };
-  apns?: { headers?: Record<string, string>; payload?: Record<string, unknown> };
+  apns?: FcmApnsOptions;
   webpush?: {
     headers?: Record<string, string>;
     notification?: Record<string, unknown>;

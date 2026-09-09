@@ -9,6 +9,7 @@ export default defineConfig({
     email: 'src/email.ts',
     telegram: 'src/telegram.ts',
     apns: 'src/apns.ts',
+    slack: 'src/slack.ts',
     custom: 'src/custom.ts',
     testing: 'src/testing.ts',
   },

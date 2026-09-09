@@ -4,12 +4,13 @@ import type {
   BatchSendOptions,
   NotificationHooks,
   NotificationMessage,
+  NotificationMessageSource,
   NotificationMiddleware,
   NotificationResult,
   NotificationSendContext,
   SendOptions,
 } from './types.js';
-import { sendConcurrently, validateMessage } from './utils.js';
+import { sendAsCompleted, sendConcurrently, validateMessage } from './utils.js';
 
 export class Notifier<TName extends string, TRecipient, TConfig, TNative, TResponse> {
   readonly name: TName;
@@ -61,12 +62,20 @@ export class Notifier<TName extends string, TRecipient, TConfig, TNative, TRespo
     }
   }
   async sendMany(
-    messages: readonly NotificationMessage<TRecipient, TNative>[],
+    messages: NotificationMessageSource<TRecipient, TNative>,
     options?: BatchSendOptions,
   ): Promise<BatchNotificationResult<TName, TResponse>> {
     if (this.closed) throw new Error(`Notifier "${this.name}" is closed.`);
-    if (this.provider.sendMany) return this.provider.sendMany(messages, options);
+    if (this.provider.sendMany && Array.isArray(messages)) return this.provider.sendMany(messages, options);
     return sendConcurrently(messages, (message) => this.send(message, options), this.name, options?.concurrency);
+  }
+  /** Stream completed results for an iterable or async iterable without buffering a batch in memory. */
+  sendEach(
+    messages: NotificationMessageSource<TRecipient, TNative>,
+    options?: BatchSendOptions,
+  ): AsyncGenerator<NotificationResult<TName, TResponse>> {
+    if (this.closed) throw new Error(`Notifier "${this.name}" is closed.`);
+    return sendAsCompleted(messages, (message) => this.send(message, options), this.name, options?.concurrency);
   }
   async close(): Promise<void> {
     if (!this.closed) {

@@ -1,6 +1,6 @@
 {
   "name": "@mohamedhabibwork/notifykit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unified TypeScript notifications across push, web push, email, messaging, and custom providers.",
   "homepage": "https://github.com/mohamedhabibwork/notifykit#readme",
   "bugs": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mohamedhabibwork/notifykit.git"
+    "url": "git+https://github.com/mohamedhabibwork/notifykit.git"
   },
   "files": [
     "dist",
@@ -45,6 +45,10 @@
     "./apns": {
       "types": "./dist/apns.d.ts",
       "import": "./dist/apns.js"
+    },
+    "./slack": {
+      "types": "./dist/slack.d.ts",
+      "import": "./dist/slack.js"
     },
     "./custom": {
       "types": "./dist/custom.d.ts",

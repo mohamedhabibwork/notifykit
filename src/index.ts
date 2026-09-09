@@ -10,6 +10,7 @@ export type {
   NotificationContent,
   NotificationHooks,
   NotificationMessage,
+  NotificationMessageSource,
   NotificationMiddleware,
   NotificationResult,
   NotificationSendContext,
@@ -31,3 +32,12 @@ export {
 export type { NotificationErrorContext } from './core/errors.js';
 export { createNotificationRouter } from './routing/index.js';
 export { createNotificationTemplates } from './templates/index.js';
+export { createSlackNotifier } from './slack.js';
+export type {
+  SlackConfig,
+  SlackNativeOptions,
+  SlackNotifier,
+  SlackNotifierConfig,
+  SlackRecipient,
+  SlackResponse,
+} from './slack.js';

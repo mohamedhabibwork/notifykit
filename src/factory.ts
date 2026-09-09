@@ -11,6 +11,8 @@ import type { TelegramConfig, TelegramNativeOptions, TelegramRecipient, Telegram
 import { createTelegramProvider } from './drivers/telegram/driver.js';
 import type { ApnsConfig, ApnsNativeOptions, ApnsRecipient, ApnsResponse } from './apns.js';
 import { createApnsProvider } from './drivers/apns/driver.js';
+import type { SlackConfig, SlackNotifier } from './slack.js';
+import { createSlackProvider } from './drivers/slack/driver.js';
 import type { NotificationDriverDefinition } from './core/provider.js';
 export type BuiltInNotificationConfig =
   | FcmConfig
@@ -18,7 +20,8 @@ export type BuiltInNotificationConfig =
   | WebPushConfig
   | EmailConfig
   | TelegramConfig
-  | ApnsConfig;
+  | ApnsConfig
+  | SlackConfig;
 export type NotifierForConfig<T> = T extends FcmConfig
   ? FcmNotifier
   : T extends HuaweiConfig
@@ -31,7 +34,9 @@ export type NotifierForConfig<T> = T extends FcmConfig
           ? Notifier<'telegram', TelegramRecipient, TelegramConfig, TelegramNativeOptions, TelegramResponse>
           : T extends ApnsConfig
             ? Notifier<'apns', ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>
-            : never;
+            : T extends SlackConfig
+              ? SlackNotifier
+              : never;
 export async function createNotifier<const TConfig extends BuiltInNotificationConfig>(
   config: TConfig,
 ): Promise<NotifierForConfig<TConfig>>;
@@ -70,6 +75,9 @@ export async function createNotifier(
       break;
     case 'apns':
       provider = await createApnsProvider(config as ApnsConfig);
+      break;
+    case 'slack':
+      provider = await createSlackProvider(config as SlackConfig);
       break;
     default: {
       const providers = (

@@ -22,4 +22,17 @@ describe('fake notifier', () => {
       NotificationPayloadError,
     );
   });
+  it('streams generator input with bounded concurrency without collecting results', async () => {
+    const notifier = createFakeNotifier<{ id: string }>();
+    function* messages() {
+      for (let id = 0; id < 1_000; id++) yield { to: { id: String(id) }, notification: { body: 'bulk' } };
+    }
+    let count = 0;
+    for await (const result of notifier.sendEach(messages(), { concurrency: 3 })) {
+      expect(result.ok).toBe(true);
+      count++;
+    }
+    expect(count).toBe(1_000);
+    expect(notifier.messages()).toHaveLength(1_000);
+  });
 });

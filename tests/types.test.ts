@@ -1,6 +1,10 @@
 import { createNotificationManager, createNotifier } from '../src/index.js';
 
 const telegram = createNotifier({ type: 'telegram', botToken: 'token' });
+const slack = createNotifier({ type: 'slack', botToken: 'xoxb-token' });
+void slack.then((notifier) =>
+  notifier.send({ to: { channel: 'C123' }, notification: { body: 'Deployment complete' }, native: { mrkdwn: true } }),
+);
 void telegram.then((notifier) =>
   notifier.send({ to: { chatId: 1 }, notification: { body: 'ok' }, native: { parse_mode: 'HTML' } }),
 );

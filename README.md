@@ -12,7 +12,7 @@ NotifyKit gives applications one small notification contract while keeping advan
 
 ## Features
 
-- First-party FCM, Huawei Push Kit, Web Push, SMTP email, Telegram, and APNs providers.
+- First-party FCM, Huawei Push Kit, Web Push, SMTP email, Telegram, Slack, and APNs providers.
 - Native provider options and responses remain fully accessible and typed.
 - Optional peer dependencies: installing one provider does not load every provider SDK.
 - Node.js 20+, Bun, and Deno-compatible fetch-based core.
@@ -38,6 +38,7 @@ Install a provider SDK only when you use that provider:
 | SMTP email                      | `@mohamedhabibwork/notifykit/email`    | `npm install nodemailer`      |
 | Telegram Bot API                | `@mohamedhabibwork/notifykit/telegram` | None (`fetch`)                |
 | Apple Push Notification service | `@mohamedhabibwork/notifykit/apns`     | `npm install @parse/node-apn` |
+| Slack                           | `@mohamedhabibwork/notifykit/slack`    | None (`fetch`)                |
 
 The provider entrypoints are tree-shakeable. SDK-backed drivers dynamically load their peer dependency only when you create the matching notifier.
 
@@ -72,6 +73,37 @@ import { createTelegramNotifier } from '@mohamedhabibwork/notifykit/telegram';
 const notifier = await createTelegramNotifier({
   botToken: process.env.TELEGRAM_BOT_TOKEN!,
 });
+```
+
+### Slack and webhook channels
+
+Slack supports either a bot token (to send to a channel) or an incoming webhook. Incoming webhooks are a convenient bridge for other channel-style integrations; use the custom-provider API when their payload differs from Slack's format.
+
+```ts
+import { createSlackNotifier } from '@mohamedhabibwork/notifykit/slack';
+
+const slack = await createSlackNotifier({ botToken: process.env.SLACK_BOT_TOKEN! });
+await slack.send({
+  to: { channel: 'C0123456789' },
+  notification: { body: 'Deployment complete.' },
+  native: { blocks: [{ type: 'section', text: { type: 'mrkdwn', text: '*Deployment complete*' } }] },
+});
+```
+
+### Streaming bulk sends
+
+Pass an iterable or async iterable to `sendEach` to keep only the configured number of in-flight messages in memory. Results are yielded as soon as each send completes. `sendMany` also accepts generators, but it collects all results before returning for backwards compatibility.
+
+```ts
+async function* recipients() {
+  for await (const user of users) {
+    yield { to: { channel: user.slackChannel }, notification: { body: 'Weekly update' } };
+  }
+}
+
+for await (const result of slack.sendEach(recipients(), { concurrency: 20 })) {
+  if (!result.ok) console.error(result.native);
+}
 ```
 
 ## Message model

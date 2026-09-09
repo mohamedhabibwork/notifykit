@@ -39,6 +39,10 @@ export interface BatchNotificationResult<TProvider extends string = string, TNat
   failureCount: number;
   results: readonly NotificationResult<TProvider, TNative>[];
 }
+/** A lazily-produced sequence of messages, suitable for large bulk sends. */
+export type NotificationMessageSource<TRecipient, TNative = unknown> =
+  | Iterable<NotificationMessage<TRecipient, TNative>>
+  | AsyncIterable<NotificationMessage<TRecipient, TNative>>;
 export interface NotificationCapabilities {
   single: boolean;
   batch: boolean;

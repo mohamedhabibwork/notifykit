@@ -1,6 +1,6 @@
 {
   "name": "@mohamedhabibwork/notifykit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unified TypeScript notifications across push, web push, email, messaging, and custom providers.",
   "homepage": "https://github.com/mohamedhabibwork/notifykit#readme",
   "bugs": {

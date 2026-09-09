@@ -1,10 +1,16 @@
 # @mohamedhabibwork/notifykit
 
-[![npm version](https://img.shields.io/npm/v/%40mohamedhabibwork%2Fnotifykit?logo=npm)](https://www.npmjs.com/package/@mohamedhabibwork/notifykit)
+[![npm version](https://img.shields.io/npm/v/@mohamedhabibwork/notifykit)](https://www.npmjs.com/package/@mohamedhabibwork/notifykit)
+[![npm downloads](https://img.shields.io/npm/dm/@mohamedhabibwork/notifykit)](https://www.npmjs.com/package/@mohamedhabibwork/notifykit)
+[![Latest Release](https://img.shields.io/github/v/release/mohamedhabibwork/notifykit)](https://github.com/mohamedhabibwork/notifykit/releases/latest)
+[![License: MIT](https://img.shields.io/npm/l/@mohamedhabibwork/notifykit)](./LICENSE)
+[![GitHub: @mohamedhabibwork](https://img.shields.io/badge/GitHub-@mohamedhabibwork-181717?logo=github&logoColor=white)](https://github.com/mohamedhabibwork)
+[![Node.js >= 20](https://img.shields.io/node/v/@mohamedhabibwork/notifykit)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![CI](https://github.com/mohamedhabibwork/notifykit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/ci.yml)
 [![Runtime smoke tests](https://github.com/mohamedhabibwork/notifykit/actions/workflows/runtimes.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/runtimes.yml)
 [![CodeQL](https://github.com/mohamedhabibwork/notifykit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/mohamedhabibwork/notifykit/actions/workflows/codeql.yml)
-[![license](https://img.shields.io/npm/l/%40mohamedhabibwork%2Fnotifykit)](./LICENSE)
+[![Socket](https://badge.socket.dev/npm/package/@mohamedhabibwork/notifykit)](https://socket.dev/npm/package/@mohamedhabibwork/notifykit)
 
 > Unified TypeScript notifications across push, web push, email, messaging, and custom providers—with strongly typed native provider options preserved instead of flattened into a lowest-common-denominator API.
 

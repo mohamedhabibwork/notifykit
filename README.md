@@ -605,6 +605,18 @@ npm run verify
 
 GitHub Actions validates Node 20, 22, 24, and 26; TypeScript 5.9, 6, and 7; formatting, linting, type checks, tests, build output, and Bun/Deno smoke tests.
 
+## Changelog
+
+`CHANGELOG.md` is generated from conventional commits (`feat:`, `fix:`, …) with [git-cliff](https://git-cliff.org) and the `cliff.toml` config. The release workflow regenerates it on every `v*` tag, uses the tag's section as the GitHub release notes, and commits the updated file back to `main`.
+
+```sh
+# Preview the changelog for unreleased commits.
+npx git-cliff --unreleased
+
+# Regenerate CHANGELOG.md.
+npm run changelog
+```
+
 ## License
 
 [MIT](./LICENSE)

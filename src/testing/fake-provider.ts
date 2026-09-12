@@ -14,46 +14,68 @@ export interface FakeNotifier<TRecipient = { id: string }, TNative = Record<stri
   failNext(error: unknown): void;
   setLatency(milliseconds: number): void;
 }
-export function createFakeNotifier<TRecipient = { id: string }, TNative = Record<string, unknown>>(options?: {
-  capabilities?: Partial<NotificationCapabilities>;
-}): FakeNotifier<TRecipient, TNative> {
-  const messages: NotificationMessage<TRecipient, TNative>[] = [];
-  let nextError: unknown;
-  let latency = 0;
-  const provider: NotificationProvider<'fake', TRecipient, never, TNative, { index: number }> = {
+/** Mutable state shared between a fake provider and its inspection recorder. */
+export interface FakeState<TRecipient = { id: string }, TNative = Record<string, unknown>> {
+  messages: NotificationMessage<TRecipient, TNative>[];
+  nextError: unknown;
+  latency: number;
+}
+export function createFakeState<TRecipient = { id: string }, TNative = Record<string, unknown>>(): FakeState<
+  TRecipient,
+  TNative
+> {
+  return { messages: [], nextError: undefined, latency: 0 };
+}
+export function createFakeProvider<TRecipient = { id: string }, TNative = Record<string, unknown>>(
+  state: FakeState<TRecipient, TNative>,
+  capabilities: NotificationCapabilities,
+): NotificationProvider<'fake', TRecipient, never, TNative, { index: number }> {
+  return {
     name: 'fake',
-    capabilities: { single: true, batch: true, notification: true, data: true, ...options?.capabilities },
+    capabilities,
     async send(
       message: NotificationMessage<TRecipient, TNative>,
       _options?: SendOptions,
     ): Promise<NotificationResult<'fake', { index: number }>> {
-      if (latency) await new Promise<void>((resolve) => setTimeout(resolve, latency));
-      if (nextError) {
-        const error = nextError;
-        nextError = undefined;
+      if (state.latency) await new Promise<void>((resolve) => setTimeout(resolve, state.latency));
+      if (state.nextError) {
+        const error = state.nextError;
+        state.nextError = undefined;
         throw error;
       }
-      messages.push(message);
+      state.messages.push(message);
       return {
         ok: true,
         provider: 'fake',
         status: 'accepted',
-        messageId: String(messages.length),
-        native: { index: messages.length - 1 },
+        messageId: String(state.messages.length),
+        native: { index: state.messages.length - 1 },
       };
     },
   };
+}
+export function createFakeNotifier<TRecipient = { id: string }, TNative = Record<string, unknown>>(options?: {
+  capabilities?: Partial<NotificationCapabilities>;
+}): FakeNotifier<TRecipient, TNative> {
+  const state = createFakeState<TRecipient, TNative>();
+  const provider = createFakeProvider(state, {
+    single: true,
+    batch: true,
+    notification: true,
+    data: true,
+    ...options?.capabilities,
+  });
   const notifier = new Notifier(provider) as FakeNotifier<TRecipient, TNative>;
-  notifier.messages = () => messages.slice();
-  notifier.lastMessage = () => messages.at(-1);
+  notifier.messages = () => state.messages.slice();
+  notifier.lastMessage = () => state.messages.at(-1);
   notifier.clear = () => {
-    messages.length = 0;
+    state.messages.length = 0;
   };
   notifier.failNext = (error) => {
-    nextError = error;
+    state.nextError = error;
   };
   notifier.setLatency = (milliseconds) => {
-    latency = milliseconds;
+    state.latency = milliseconds;
   };
   return notifier;
 }

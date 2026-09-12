@@ -557,6 +557,28 @@ notifier.setLatency(20);
 notifier.clear();
 ```
 
+To test code that goes through `createNotifier` (factories, managers, routers), use the fake driver instead. It plugs into the custom-provider path, so your production wiring runs unchanged against a recording fake.
+
+```ts
+import { createFakeDriver } from '@mohamedhabibwork/notifykit/testing';
+
+const driver = createFakeDriver<{ userId: string }>();
+
+const notifier = await createNotifier({ type: 'fake' }, { providers: [driver] });
+const manager = createNotificationManager({ providers: { alerts: { type: 'fake' } }, default: 'alerts' });
+
+await notifier.send({ to: { userId: '100' }, notification: { title: 'Hello' } });
+
+console.log(driver.messages());
+console.log(driver.lastMessage());
+
+driver.failNext(new Error('temporary provider outage'));
+driver.setLatency(20);
+driver.clear();
+```
+
+Pass `capabilities` (in `createFakeDriver` options or per config) to simulate providers with different capability sets.
+
 ## Runtime support
 
 | Runtime     | Support                                                  |

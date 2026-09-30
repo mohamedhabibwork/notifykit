@@ -13,7 +13,9 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "llms.txt",
+    "docs"
   ],
   "type": "module",
   "sideEffects": false,
@@ -75,6 +77,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@types/node": "^26.0.0",
     "git-cliff": "^2.13.1",
     "oxfmt": "^0.68.0",
     "oxlint": "^1.82.0",

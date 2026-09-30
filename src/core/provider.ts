@@ -4,7 +4,7 @@ import type {
   NotificationMessage,
   NotificationResult,
   SendOptions,
-} from './types.js';
+} from "./types.js";
 export interface NotificationProvider<
   TName extends string,
   TRecipient,
@@ -34,5 +34,7 @@ export interface NotificationDriverDefinition<
 > {
   readonly name: TName;
   readonly capabilities: NotificationCapabilities;
-  create(config: TConfig): Promise<NotificationProvider<TName, TRecipient, TConfig, TNativeSend, TNativeResponse>>;
+  create(
+    config: TConfig,
+  ): Promise<NotificationProvider<TName, TRecipient, TConfig, TNativeSend, TNativeResponse>>;
 }

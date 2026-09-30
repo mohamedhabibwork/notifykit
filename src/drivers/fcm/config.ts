@@ -1,7 +1,7 @@
-import type { FcmTokenCache } from './types.js';
+import type { FcmTokenCache } from "./types.js";
 
 export interface FcmConfig {
-  type: 'fcm';
+  type: "fcm";
   credential:
     | { projectId: string; clientEmail: string; privateKey: string }
     | { serviceAccount: Record<string, unknown> };
@@ -13,4 +13,4 @@ export interface FcmConfig {
     refreshSkewMs?: number;
   };
 }
-export type FcmNotifierConfig = Omit<FcmConfig, 'type'>;
+export type FcmNotifierConfig = Omit<FcmConfig, "type">;

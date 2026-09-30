@@ -1,7 +1,7 @@
 export type NotificationTemplate<TVariables, TResult> = (variables: TVariables) => TResult;
-export function createNotificationTemplates<TTemplates extends Record<string, NotificationTemplate<never, unknown>>>(
-  templates: TTemplates,
-) {
+export function createNotificationTemplates<
+  TTemplates extends Record<string, NotificationTemplate<never, unknown>>,
+>(templates: TTemplates) {
   return {
     render<TKey extends keyof TTemplates>(
       name: TKey,

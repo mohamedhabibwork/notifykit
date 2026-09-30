@@ -1,9 +1,9 @@
-import type { NotificationDriverDefinition } from '../core/provider.js';
-import type { NotificationCapabilities, NotificationMessage } from '../core/types.js';
-import { createFakeProvider, createFakeState, type FakeState } from './fake-provider.js';
+import type { NotificationDriverDefinition } from "../core/provider.js";
+import type { NotificationCapabilities, NotificationMessage } from "../core/types.js";
+import { createFakeProvider, createFakeState, type FakeState } from "./fake-provider.js";
 
 export interface FakeDriverConfig {
-  type: 'fake';
+  type: "fake";
   /** Capability overrides merged over the fake defaults for providers created from this config. */
   capabilities?: Partial<NotificationCapabilities>;
 }
@@ -14,18 +14,27 @@ export interface FakeDriverConfig {
 export interface FakeDriver<
   TRecipient = { id: string },
   TNative = Record<string, unknown>,
-> extends NotificationDriverDefinition<'fake', FakeDriverConfig, TRecipient, TNative, { index: number }> {
+> extends NotificationDriverDefinition<
+  "fake",
+  FakeDriverConfig,
+  TRecipient,
+  TNative,
+  { index: number }
+> {
   messages(): readonly NotificationMessage<TRecipient, TNative>[];
   lastMessage(): NotificationMessage<TRecipient, TNative> | undefined;
   clear(): void;
   failNext(error: unknown): void;
   setLatency(milliseconds: number): void;
 }
-export function createFakeDriver<TRecipient = { id: string }, TNative = Record<string, unknown>>(options?: {
-  capabilities?: Partial<NotificationCapabilities>;
-}): FakeDriver<TRecipient, TNative> {
+export function createFakeDriver<
+  TRecipient = { id: string },
+  TNative = Record<string, unknown>,
+>(options?: { capabilities?: Partial<NotificationCapabilities> }): FakeDriver<TRecipient, TNative> {
   const state: FakeState<TRecipient, TNative> = createFakeState();
-  const capabilities = (overrides?: Partial<NotificationCapabilities>): NotificationCapabilities => ({
+  const capabilities = (
+    overrides?: Partial<NotificationCapabilities>,
+  ): NotificationCapabilities => ({
     single: true,
     batch: true,
     notification: true,
@@ -34,7 +43,7 @@ export function createFakeDriver<TRecipient = { id: string }, TNative = Record<s
     ...overrides,
   });
   return {
-    name: 'fake',
+    name: "fake",
     capabilities: capabilities(),
     async create(config) {
       return createFakeProvider<TRecipient, TNative>(state, capabilities(config?.capabilities));

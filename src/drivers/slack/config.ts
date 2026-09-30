@@ -1,5 +1,5 @@
 export interface SlackConfig {
-  type: 'slack';
+  type: "slack";
   /** Bot token used with Slack's chat.postMessage API. */
   botToken?: string;
   /** Default incoming-webhook URL. A per-message URL can override this. */
@@ -7,4 +7,4 @@ export interface SlackConfig {
   apiUrl?: string;
 }
 
-export type SlackNotifierConfig = Omit<SlackConfig, 'type'>;
+export type SlackNotifierConfig = Omit<SlackConfig, "type">;

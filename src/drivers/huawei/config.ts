@@ -1,6 +1,6 @@
-import type { HuaweiTokenCache } from './types.js';
+import type { HuaweiTokenCache } from "./types.js";
 export interface HuaweiConfig {
-  type: 'huawei';
+  type: "huawei";
   appId: string;
   appSecret: string;
   /** Push API base URL, primarily for regional endpoints and tests. */ endpoint?: string;
@@ -11,4 +11,4 @@ export interface HuaweiConfig {
     refreshSkewMs?: number;
   };
 }
-export type HuaweiNotifierConfig = Omit<HuaweiConfig, 'type'>;
+export type HuaweiNotifierConfig = Omit<HuaweiConfig, "type">;

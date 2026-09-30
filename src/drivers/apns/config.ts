@@ -1,6 +1,6 @@
 export interface ApnsConfig {
-  type: 'apns';
+  type: "apns";
   token: { key: string; keyId: string; teamId: string };
   production?: boolean;
 }
-export type ApnsNotifierConfig = Omit<ApnsConfig, 'type'>;
+export type ApnsNotifierConfig = Omit<ApnsConfig, "type">;

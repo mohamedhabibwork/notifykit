@@ -1,7 +1,14 @@
 export type ApnsRecipient = { deviceToken: string } | { deviceTokens: readonly string[] };
 export interface ApnsNativeOptions {
   topic?: string;
-  pushType?: 'alert' | 'background' | 'voip' | 'complication' | 'fileprovider' | 'mdm' | 'liveactivity';
+  pushType?:
+    | "alert"
+    | "background"
+    | "voip"
+    | "complication"
+    | "fileprovider"
+    | "mdm"
+    | "liveactivity";
   expiration?: number;
   priority?: 5 | 10;
   collapseId?: string;

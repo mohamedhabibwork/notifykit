@@ -19,7 +19,7 @@ export interface NotificationMessage<
   actions?: readonly NotificationAction[];
   collapseKey?: string;
   ttl?: number;
-  priority?: 'normal' | 'high';
+  priority?: "normal" | "high";
   idempotencyKey?: string;
   native?: TNative;
 }
@@ -28,7 +28,7 @@ export interface NotificationResult<TProvider extends string = string, TNative =
   provider: TProvider;
   messageId?: string;
   recipient?: string;
-  status: 'sent' | 'accepted' | 'delivered' | 'failed' | 'unknown';
+  status: "sent" | "accepted" | "delivered" | "failed" | "unknown";
   retryable?: boolean;
   native: TNative;
 }
@@ -68,7 +68,7 @@ export interface BatchSendOptions extends SendOptions {
 export interface NotificationSendContext {
   provider: string;
   providerAlias?: string;
-  operation: 'send' | 'sendMany';
+  operation: "send" | "sendMany";
   startedAt: number;
   notificationId?: string;
   traceId?: string;

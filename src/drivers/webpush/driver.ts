@@ -1,9 +1,9 @@
-import { importOptional } from '../../core/dynamic-import.js';
-import { NotificationConfigError, NotificationProviderError } from '../../core/errors.js';
-import type { NotificationProvider } from '../../core/provider.js';
-import type { NotificationMessage, NotificationResult, SendOptions } from '../../core/types.js';
-import type { WebPushConfig } from './config.js';
-import type { WebPushNativeOptions, WebPushRecipient, WebPushResponse } from './types.js';
+import { importOptional } from "../../core/dynamic-import.js";
+import { NotificationConfigError, NotificationProviderError } from "../../core/errors.js";
+import type { NotificationProvider } from "../../core/provider.js";
+import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
+import type { WebPushConfig } from "./config.js";
+import type { WebPushNativeOptions, WebPushRecipient, WebPushResponse } from "./types.js";
 type WebPushClient = {
   setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
   sendNotification(
@@ -14,21 +14,32 @@ type WebPushClient = {
 };
 export async function createWebPushProvider(
   config: WebPushConfig,
-): Promise<NotificationProvider<'webpush', WebPushRecipient, WebPushConfig, WebPushNativeOptions, WebPushResponse>> {
+): Promise<
+  NotificationProvider<
+    "webpush",
+    WebPushRecipient,
+    WebPushConfig,
+    WebPushNativeOptions,
+    WebPushResponse
+  >
+> {
   let module: unknown;
   try {
-    module = await importOptional('web-push');
+    module = await importOptional("web-push");
   } catch (cause) {
-    throw new NotificationConfigError('Web Push provider requires "web-push". Install it with: npm install web-push', {
-      provider: 'webpush',
-      retryable: false,
-      cause,
-    });
+    throw new NotificationConfigError(
+      'Web Push provider requires "web-push". Install it with: npm install web-push',
+      {
+        provider: "webpush",
+        retryable: false,
+        cause,
+      },
+    );
   }
   const client = ((module as { default?: WebPushClient }).default ?? module) as WebPushClient;
   client.setVapidDetails(config.vapid.subject, config.vapid.publicKey, config.vapid.privateKey);
   return {
-    name: 'webpush',
+    name: "webpush",
     capabilities: {
       single: true,
       batch: false,
@@ -42,17 +53,21 @@ export async function createWebPushProvider(
     async send(
       message: NotificationMessage<WebPushRecipient, WebPushNativeOptions>,
       _options?: SendOptions,
-    ): Promise<NotificationResult<'webpush', WebPushResponse>> {
+    ): Promise<NotificationResult<"webpush", WebPushResponse>> {
       try {
         const native = await client.sendNotification(
           message.to,
-          JSON.stringify({ notification: message.notification, data: message.data, actions: message.actions }),
+          JSON.stringify({
+            notification: message.notification,
+            data: message.data,
+            actions: message.actions,
+          }),
           message.native,
         );
-        return { ok: true, provider: 'webpush', status: 'accepted', native };
+        return { ok: true, provider: "webpush", status: "accepted", native };
       } catch (cause) {
-        throw new NotificationProviderError('Web Push delivery request failed.', {
-          provider: 'webpush',
+        throw new NotificationProviderError("Web Push delivery request failed.", {
+          provider: "webpush",
           retryable: false,
           cause,
         });

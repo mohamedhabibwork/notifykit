@@ -1,24 +1,33 @@
-import { NotificationPayloadError, NotificationTimeoutError } from './errors.js';
+import { NotificationPayloadError, NotificationTimeoutError } from "./errors.js";
 import type {
   BatchNotificationResult,
   NotificationMessage,
   NotificationMessageSource,
   NotificationResult,
   SendOptions,
-} from './types.js';
+} from "./types.js";
 export function validateMessage<TRecipient, TNative>(
   message: NotificationMessage<TRecipient, TNative>,
   provider: string,
 ): void {
   if (message.to == null)
-    throw new NotificationPayloadError('A notification recipient is required.', { provider, retryable: false });
-  if (message.ttl != null && (!Number.isFinite(message.ttl) || message.ttl < 0))
-    throw new NotificationPayloadError('ttl must be a non-negative finite number.', { provider, retryable: false });
-  if (!message.notification && !message.data && !message.native)
-    throw new NotificationPayloadError('A notification must contain notification, data, or native content.', {
+    throw new NotificationPayloadError("A notification recipient is required.", {
       provider,
       retryable: false,
     });
+  if (message.ttl != null && (!Number.isFinite(message.ttl) || message.ttl < 0))
+    throw new NotificationPayloadError("ttl must be a non-negative finite number.", {
+      provider,
+      retryable: false,
+    });
+  if (!message.notification && !message.data && !message.native)
+    throw new NotificationPayloadError(
+      "A notification must contain notification, data, or native content.",
+      {
+        provider,
+        retryable: false,
+      },
+    );
 }
 export async function withTimeout<T>(
   run: (signal: AbortSignal | undefined) => Promise<T>,
@@ -29,31 +38,37 @@ export async function withTimeout<T>(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeout);
   const abort = () => controller.abort();
-  options.signal?.addEventListener('abort', abort, { once: true });
+  options.signal?.addEventListener("abort", abort, { once: true });
   try {
     return await run(controller.signal);
   } catch (error) {
     if (controller.signal.aborted && !options.signal?.aborted)
-      throw new NotificationTimeoutError(`Notification request timed out after ${options.timeout}ms.`, {
-        provider,
-        retryable: true,
-        cause: error,
-      });
+      throw new NotificationTimeoutError(
+        `Notification request timed out after ${options.timeout}ms.`,
+        {
+          provider,
+          retryable: true,
+          cause: error,
+        },
+      );
     throw error;
   } finally {
     clearTimeout(timer);
-    options.signal?.removeEventListener('abort', abort);
+    options.signal?.removeEventListener("abort", abort);
   }
 }
 export async function sendConcurrently<TName extends string, TRecipient, TNative, TResponse>(
   messages: NotificationMessageSource<TRecipient, TNative>,
-  send: (message: NotificationMessage<TRecipient, TNative>) => Promise<NotificationResult<TName, TResponse>>,
+  send: (
+    message: NotificationMessage<TRecipient, TNative>,
+  ) => Promise<NotificationResult<TName, TResponse>>,
   provider: TName,
   concurrency = 10,
 ): Promise<BatchNotificationResult<TName, TResponse>> {
   if (Array.isArray(messages)) return sendArrayConcurrently(messages, send, provider, concurrency);
   const results: NotificationResult<TName, TResponse>[] = [];
-  for await (const result of sendAsCompleted(messages, send, provider, concurrency)) results.push(result);
+  for await (const result of sendAsCompleted(messages, send, provider, concurrency))
+    results.push(result);
   return {
     provider,
     total: results.length,
@@ -65,7 +80,9 @@ export async function sendConcurrently<TName extends string, TRecipient, TNative
 
 async function sendArrayConcurrently<TName extends string, TRecipient, TNative, TResponse>(
   messages: readonly NotificationMessage<TRecipient, TNative>[],
-  send: (message: NotificationMessage<TRecipient, TNative>) => Promise<NotificationResult<TName, TResponse>>,
+  send: (
+    message: NotificationMessage<TRecipient, TNative>,
+  ) => Promise<NotificationResult<TName, TResponse>>,
   provider: TName,
   concurrency: number,
 ): Promise<BatchNotificationResult<TName, TResponse>> {
@@ -79,11 +96,19 @@ async function sendArrayConcurrently<TName extends string, TRecipient, TNative, 
       try {
         results[index] = await send(message);
       } catch (error) {
-        results[index] = { ok: false, provider, status: 'failed', retryable: false, native: error as TResponse };
+        results[index] = {
+          ok: false,
+          provider,
+          status: "failed",
+          retryable: false,
+          native: error as TResponse,
+        };
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(Math.max(1, concurrency), messages.length) }, worker));
+  await Promise.all(
+    Array.from({ length: Math.min(Math.max(1, concurrency), messages.length) }, worker),
+  );
   return {
     provider,
     total: results.length,
@@ -99,7 +124,9 @@ async function sendArrayConcurrently<TName extends string, TRecipient, TNative, 
  */
 export async function* sendAsCompleted<TName extends string, TRecipient, TNative, TResponse>(
   messages: NotificationMessageSource<TRecipient, TNative>,
-  send: (message: NotificationMessage<TRecipient, TNative>) => Promise<NotificationResult<TName, TResponse>>,
+  send: (
+    message: NotificationMessage<TRecipient, TNative>,
+  ) => Promise<NotificationResult<TName, TResponse>>,
   provider: TName,
   concurrency = 10,
 ): AsyncGenerator<NotificationResult<TName, TResponse>> {
@@ -116,7 +143,7 @@ export async function* sendAsCompleted<TName extends string, TRecipient, TNative
     const result = send(next.value).catch((error): NotificationResult<TName, TResponse> => ({
       ok: false,
       provider,
-      status: 'failed',
+      status: "failed",
       retryable: false,
       native: error as TResponse,
     }));

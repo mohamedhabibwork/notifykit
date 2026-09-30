@@ -8,7 +8,11 @@ export interface EmailNativeOptions {
   cc?: EmailRecipient;
   bcc?: EmailRecipient;
   headers?: Record<string, string>;
-  attachments?: readonly { filename?: string; content: string | Uint8Array; contentType?: string }[];
+  attachments?: readonly {
+    filename?: string;
+    content: string | Uint8Array;
+    contentType?: string;
+  }[];
 }
 export interface EmailResponse {
   messageId?: string;

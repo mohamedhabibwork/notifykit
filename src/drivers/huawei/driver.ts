@@ -3,75 +3,92 @@ import {
   NotificationNetworkError,
   NotificationProviderError,
   NotificationRateLimitError,
-} from '../../core/errors.js';
-import type { NotificationProvider } from '../../core/provider.js';
-import type { NotificationMessage, NotificationResult, SendOptions } from '../../core/types.js';
-import { withTimeout } from '../../core/utils.js';
-import type { HuaweiConfig } from './config.js';
+} from "../../core/errors.js";
+import type { NotificationProvider } from "../../core/provider.js";
+import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
+import { withTimeout } from "../../core/utils.js";
+import type { HuaweiConfig } from "./config.js";
 import type {
   HuaweiAccessToken,
   HuaweiNativeClient,
   HuaweiNativeOptions,
   HuaweiRecipient,
   HuaweiResponse,
-} from './types.js';
+} from "./types.js";
 export async function createHuaweiProvider(
   config: HuaweiConfig,
-): Promise<NotificationProvider<'huawei', HuaweiRecipient, HuaweiConfig, HuaweiNativeOptions, HuaweiResponse>> {
-  const endpoint = (config.endpoint ?? 'https://push-api.cloud.huawei.com').replace(/\/$/, '');
-  const authEndpoint = (config.authEndpoint ?? 'https://oauth-login.cloud.huawei.com').replace(/\/$/, '');
+): Promise<
+  NotificationProvider<"huawei", HuaweiRecipient, HuaweiConfig, HuaweiNativeOptions, HuaweiResponse>
+> {
+  const endpoint = (config.endpoint ?? "https://push-api.cloud.huawei.com").replace(/\/$/, "");
+  const authEndpoint = (config.authEndpoint ?? "https://oauth-login.cloud.huawei.com").replace(
+    /\/$/,
+    "",
+  );
   const refreshSkewMs = config.auth?.refreshSkewMs ?? 30_000;
   if (!Number.isFinite(refreshSkewMs) || refreshSkewMs < 0)
-    throw new NotificationProviderError('Huawei auth.refreshSkewMs must be a non-negative finite number.', {
-      provider: 'huawei',
-      retryable: false,
-    });
+    throw new NotificationProviderError(
+      "Huawei auth.refreshSkewMs must be a non-negative finite number.",
+      {
+        provider: "huawei",
+        retryable: false,
+      },
+    );
   let localToken: HuaweiAccessToken | undefined;
   const getAccessToken = async (options?: SendOptions): Promise<HuaweiAccessToken> => {
     const externalToken = await config.auth?.tokenCache?.get();
     const cached = [localToken, externalToken]
-      .filter((token): token is HuaweiAccessToken => token != null && token.expiresAt > Date.now() + refreshSkewMs)
-      .sort((left, right) => right.expiresAt - left.expiresAt)[0];
+      .filter(
+        (token): token is HuaweiAccessToken =>
+          token != null && token.expiresAt > Date.now() + refreshSkewMs,
+      )
+      .toSorted((left, right) => right.expiresAt - left.expiresAt)[0];
     if (cached) return cached;
     let response: Response;
     try {
       response = await withTimeout(
         (signal) =>
           fetch(`${authEndpoint}/oauth2/v3/token`, {
-            method: 'POST',
-            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            method: "POST",
+            headers: { "content-type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
-              grant_type: 'client_credentials',
+              grant_type: "client_credentials",
               client_id: config.appId,
               client_secret: config.appSecret,
             }),
             signal,
           }),
         options,
-        'huawei',
+        "huawei",
       );
     } catch (cause) {
-      throw new NotificationNetworkError('Unable to authenticate with Huawei Push Kit.', {
-        provider: 'huawei',
+      throw new NotificationNetworkError("Unable to authenticate with Huawei Push Kit.", {
+        provider: "huawei",
         retryable: true,
         cause,
       });
     }
-    const payload = (await response.json().catch(() => ({}))) as { access_token?: string; expires_in?: number };
+    const payload = (await response.json().catch(() => ({}))) as {
+      access_token?: string;
+      expires_in?: number;
+    };
     if (!response.ok || !payload.access_token)
-      throw new NotificationAuthenticationError('Huawei Push Kit authentication failed.', {
-        provider: 'huawei',
+      throw new NotificationAuthenticationError("Huawei Push Kit authentication failed.", {
+        provider: "huawei",
         retryable: response.status >= 500,
         statusCode: response.status,
         native: payload,
       });
-    const token = { accessToken: payload.access_token, expiresAt: Date.now() + (payload.expires_in ?? 3000) * 1000 };
+    const token = {
+      accessToken: payload.access_token,
+      expiresAt: Date.now() + (payload.expires_in ?? 3000) * 1000,
+    };
     localToken = token;
     await config.auth?.tokenCache?.set(token);
     return token;
   };
   return {
-    name: 'huawei',
+    name: "huawei",
     capabilities: {
       single: true,
       batch: false,
@@ -86,15 +103,19 @@ export async function createHuaweiProvider(
     async send(
       message: NotificationMessage<HuaweiRecipient, HuaweiNativeOptions>,
       options?: SendOptions,
-    ): Promise<NotificationResult<'huawei', HuaweiResponse>> {
+    ): Promise<NotificationResult<"huawei", HuaweiResponse>> {
       const token = await getAccessToken(options);
       const recipient =
-        'token' in message.to ? [message.to.token] : 'tokens' in message.to ? [...message.to.tokens] : undefined;
+        "token" in message.to
+          ? [message.to.token]
+          : "tokens" in message.to
+            ? [...message.to.tokens]
+            : undefined;
       const body = {
         validate_only: false,
         message: {
-          token: recipient?.join(','),
-          topic: 'topic' in message.to ? message.to.topic : undefined,
+          token: recipient?.join(","),
+          topic: "topic" in message.to ? message.to.topic : undefined,
           notification: message.notification && {
             title: message.notification.title,
             body: message.notification.body,
@@ -111,43 +132,58 @@ export async function createHuaweiProvider(
         response = await withTimeout(
           (signal) =>
             fetch(`${endpoint}/v1/${config.appId}/messages:send`, {
-              method: 'POST',
-              headers: { authorization: `Bearer ${token.accessToken}`, 'content-type': 'application/json' },
+              method: "POST",
+              headers: {
+                authorization: `Bearer ${token.accessToken}`,
+                "content-type": "application/json",
+              },
               body: JSON.stringify(body),
               signal,
             }),
           options,
-          'huawei',
+          "huawei",
         );
       } catch (cause) {
-        throw new NotificationNetworkError('Unable to reach Huawei Push Kit.', {
-          provider: 'huawei',
+        throw new NotificationNetworkError("Unable to reach Huawei Push Kit.", {
+          provider: "huawei",
           retryable: true,
           cause,
         });
       }
-      const native = (await response.json().catch(() => ({ msg: response.statusText }))) as HuaweiResponse;
-      if (response.ok) return { ok: true, provider: 'huawei', messageId: native.requestId, status: 'accepted', native };
+      const native = (await response
+        .json()
+        .catch(() => ({ msg: response.statusText }))) as HuaweiResponse;
+      if (response.ok)
+        return {
+          ok: true,
+          provider: "huawei",
+          messageId: native.requestId,
+          status: "accepted",
+          native,
+        };
       if (response.status === 401 || response.status === 403)
-        throw new NotificationAuthenticationError('Huawei Push Kit authorization failed.', {
-          provider: 'huawei',
+        throw new NotificationAuthenticationError("Huawei Push Kit authorization failed.", {
+          provider: "huawei",
           retryable: false,
           statusCode: response.status,
           native,
         });
       if (response.status === 429)
-        throw new NotificationRateLimitError('Huawei Push Kit rate limit exceeded.', {
-          provider: 'huawei',
+        throw new NotificationRateLimitError("Huawei Push Kit rate limit exceeded.", {
+          provider: "huawei",
           retryable: true,
           statusCode: response.status,
           native,
         });
-      throw new NotificationProviderError(native.msg ?? 'Huawei Push Kit rejected the notification.', {
-        provider: 'huawei',
-        retryable: response.status >= 500,
-        statusCode: response.status,
-        native,
-      });
+      throw new NotificationProviderError(
+        native.msg ?? "Huawei Push Kit rejected the notification.",
+        {
+          provider: "huawei",
+          retryable: response.status >= 500,
+          statusCode: response.status,
+          native,
+        },
+      );
     },
   };
 }

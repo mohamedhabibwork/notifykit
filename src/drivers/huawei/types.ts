@@ -9,7 +9,7 @@ export interface HuaweiApnsOptions {
   payload?: {
     aps?: {
       mutableContent?: boolean;
-      'mutable-content'?: 1;
+      "mutable-content"?: 1;
       [key: string]: unknown;
     };
     [key: string]: unknown;

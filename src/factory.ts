@@ -1,19 +1,29 @@
-import { Notifier } from './core/notifier.js';
-import type { FcmConfig, FcmNotifier } from './fcm.js';
-import { createFcmProvider } from './drivers/fcm/driver.js';
-import type { HuaweiConfig, HuaweiNotifier } from './huawei.js';
-import { createHuaweiProvider } from './drivers/huawei/driver.js';
-import type { WebPushConfig, WebPushNativeOptions, WebPushRecipient, WebPushResponse } from './webpush.js';
-import { createWebPushProvider } from './drivers/webpush/driver.js';
-import type { EmailConfig, EmailNativeOptions, EmailRecipient, EmailResponse } from './email.js';
-import { createEmailProvider } from './drivers/email/driver.js';
-import type { TelegramConfig, TelegramNativeOptions, TelegramRecipient, TelegramResponse } from './telegram.js';
-import { createTelegramProvider } from './drivers/telegram/driver.js';
-import type { ApnsConfig, ApnsNativeOptions, ApnsRecipient, ApnsResponse } from './apns.js';
-import { createApnsProvider } from './drivers/apns/driver.js';
-import type { SlackConfig, SlackNotifier } from './slack.js';
-import { createSlackProvider } from './drivers/slack/driver.js';
-import type { NotificationDriverDefinition } from './core/provider.js';
+import { Notifier } from "./core/notifier.js";
+import type { FcmConfig, FcmNotifier } from "./fcm.js";
+import { createFcmProvider } from "./drivers/fcm/driver.js";
+import type { HuaweiConfig, HuaweiNotifier } from "./huawei.js";
+import { createHuaweiProvider } from "./drivers/huawei/driver.js";
+import type {
+  WebPushConfig,
+  WebPushNativeOptions,
+  WebPushRecipient,
+  WebPushResponse,
+} from "./webpush.js";
+import { createWebPushProvider } from "./drivers/webpush/driver.js";
+import type { EmailConfig, EmailNativeOptions, EmailRecipient, EmailResponse } from "./email.js";
+import { createEmailProvider } from "./drivers/email/driver.js";
+import type {
+  TelegramConfig,
+  TelegramNativeOptions,
+  TelegramRecipient,
+  TelegramResponse,
+} from "./telegram.js";
+import { createTelegramProvider } from "./drivers/telegram/driver.js";
+import type { ApnsConfig, ApnsNativeOptions, ApnsRecipient, ApnsResponse } from "./apns.js";
+import { createApnsProvider } from "./drivers/apns/driver.js";
+import type { SlackConfig, SlackNotifier } from "./slack.js";
+import { createSlackProvider } from "./drivers/slack/driver.js";
+import type { NotificationDriverDefinition } from "./core/provider.js";
 export type BuiltInNotificationConfig =
   | FcmConfig
   | HuaweiConfig
@@ -27,13 +37,19 @@ export type NotifierForConfig<T> = T extends FcmConfig
   : T extends HuaweiConfig
     ? HuaweiNotifier
     : T extends WebPushConfig
-      ? Notifier<'webpush', WebPushRecipient, WebPushConfig, WebPushNativeOptions, WebPushResponse>
+      ? Notifier<"webpush", WebPushRecipient, WebPushConfig, WebPushNativeOptions, WebPushResponse>
       : T extends EmailConfig
-        ? Notifier<'email', EmailRecipient, EmailConfig, EmailNativeOptions, EmailResponse>
+        ? Notifier<"email", EmailRecipient, EmailConfig, EmailNativeOptions, EmailResponse>
         : T extends TelegramConfig
-          ? Notifier<'telegram', TelegramRecipient, TelegramConfig, TelegramNativeOptions, TelegramResponse>
+          ? Notifier<
+              "telegram",
+              TelegramRecipient,
+              TelegramConfig,
+              TelegramNativeOptions,
+              TelegramResponse
+            >
           : T extends ApnsConfig
-            ? Notifier<'apns', ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>
+            ? Notifier<"apns", ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>
             : T extends SlackConfig
               ? SlackNotifier
               : never;
@@ -58,31 +74,39 @@ export async function createNotifier(
 ): Promise<unknown> {
   let provider;
   switch (config.type) {
-    case 'fcm':
+    case "fcm":
       provider = await createFcmProvider(config as FcmConfig);
       break;
-    case 'huawei':
+    case "huawei":
       provider = await createHuaweiProvider(config as HuaweiConfig);
       break;
-    case 'webpush':
+    case "webpush":
       provider = await createWebPushProvider(config as WebPushConfig);
       break;
-    case 'email':
+    case "email":
       provider = await createEmailProvider(config as EmailConfig);
       break;
-    case 'telegram':
+    case "telegram":
       provider = await createTelegramProvider(config as TelegramConfig);
       break;
-    case 'apns':
+    case "apns":
       provider = await createApnsProvider(config as ApnsConfig);
       break;
-    case 'slack':
+    case "slack":
       provider = await createSlackProvider(config as SlackConfig);
       break;
     default: {
       const providers = (
         options as
-          | { providers?: readonly NotificationDriverDefinition<string, unknown, unknown, unknown, unknown>[] }
+          | {
+              providers?: readonly NotificationDriverDefinition<
+                string,
+                unknown,
+                unknown,
+                unknown,
+                unknown
+              >[];
+            }
           | undefined
       )?.providers;
       const definition = providers?.find((candidate) => candidate.name === config.type);

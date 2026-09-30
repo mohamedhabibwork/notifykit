@@ -1,10 +1,13 @@
-import { importOptional } from '../../core/dynamic-import.js';
-import { NotificationConfigError, NotificationProviderError } from '../../core/errors.js';
-import type { NotificationProvider } from '../../core/provider.js';
-import type { NotificationMessage, NotificationResult, SendOptions } from '../../core/types.js';
-import type { ApnsConfig } from './config.js';
-import type { ApnsNativeOptions, ApnsRecipient, ApnsResponse } from './types.js';
-type Provider = { send(note: unknown, tokens: string | readonly string[]): Promise<ApnsResponse>; shutdown?(): void };
+import { importOptional } from "../../core/dynamic-import.js";
+import { NotificationConfigError, NotificationProviderError } from "../../core/errors.js";
+import type { NotificationProvider } from "../../core/provider.js";
+import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
+import type { ApnsConfig } from "./config.js";
+import type { ApnsNativeOptions, ApnsRecipient, ApnsResponse } from "./types.js";
+type Provider = {
+  send(note: unknown, tokens: string | readonly string[]): Promise<ApnsResponse>;
+  shutdown?(): void;
+};
 type Notification = {
   topic?: string;
   expiry?: number;
@@ -16,14 +19,16 @@ type Notification = {
 };
 export async function createApnsProvider(
   config: ApnsConfig,
-): Promise<NotificationProvider<'apns', ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>> {
+): Promise<
+  NotificationProvider<"apns", ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>
+> {
   let module: unknown;
   try {
-    module = await importOptional('@parse/node-apn');
+    module = await importOptional("@parse/node-apn");
   } catch (cause) {
     throw new NotificationConfigError(
       'APNs provider requires "@parse/node-apn". Install it with: npm install @parse/node-apn',
-      { provider: 'apns', retryable: false, cause },
+      { provider: "apns", retryable: false, cause },
     );
   }
   const apn = ((module as { default?: Record<string, unknown> }).default ?? module) as {
@@ -35,13 +40,21 @@ export async function createApnsProvider(
     production: config.production ?? false,
   });
   return {
-    name: 'apns',
-    capabilities: { single: true, batch: true, token: true, notification: true, data: true, ttl: true, priority: true },
+    name: "apns",
+    capabilities: {
+      single: true,
+      batch: true,
+      token: true,
+      notification: true,
+      data: true,
+      ttl: true,
+      priority: true,
+    },
     native: () => client,
     async send(
       message: NotificationMessage<ApnsRecipient, ApnsNativeOptions>,
       _options?: SendOptions,
-    ): Promise<NotificationResult<'apns', ApnsResponse>> {
+    ): Promise<NotificationResult<"apns", ApnsResponse>> {
       const note = new apn.Notification();
       const native = message.native;
       note.topic = native?.topic;
@@ -49,23 +62,26 @@ export async function createApnsProvider(
       note.priority = native?.priority;
       note.collapseId = native?.collapseId ?? message.collapseKey;
       note.pushType = native?.pushType;
-      note.alert = message.notification && { title: message.notification.title, body: message.notification.body };
+      note.alert = message.notification && {
+        title: message.notification.title,
+        body: message.notification.body,
+      };
       note.payload = { ...message.data, ...native?.payload };
       try {
         const response = await client.send(
           note,
-          'deviceToken' in message.to ? message.to.deviceToken : message.to.deviceTokens,
+          "deviceToken" in message.to ? message.to.deviceToken : message.to.deviceTokens,
         );
         return {
           ok: !response.failed?.length,
-          provider: 'apns',
-          status: response.failed?.length ? 'failed' : 'accepted',
+          provider: "apns",
+          status: response.failed?.length ? "failed" : "accepted",
           retryable: false,
           native: response,
         };
       } catch (cause) {
-        throw new NotificationProviderError('APNs rejected the notification.', {
-          provider: 'apns',
+        throw new NotificationProviderError("APNs rejected the notification.", {
+          provider: "apns",
           retryable: true,
           cause,
         });

@@ -5,10 +5,10 @@ export interface WebPushRecipient {
 }
 export interface WebPushNativeOptions {
   TTL?: number;
-  urgency?: 'very-low' | 'low' | 'normal' | 'high';
+  urgency?: "very-low" | "low" | "normal" | "high";
   topic?: string;
   headers?: Record<string, string>;
-  contentEncoding?: 'aesgcm' | 'aes128gcm';
+  contentEncoding?: "aesgcm" | "aes128gcm";
 }
 export interface WebPushResponse {
   statusCode?: number;

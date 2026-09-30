@@ -1,6 +1,6 @@
-import { Notifier } from './core/notifier.js';
-import { createFcmProvider } from './drivers/fcm/driver.js';
-import type { FcmConfig, FcmNotifierConfig } from './drivers/fcm/config.js';
+import { Notifier } from "./core/notifier.js";
+import { createFcmProvider } from "./drivers/fcm/driver.js";
+import type { FcmConfig, FcmNotifierConfig } from "./drivers/fcm/config.js";
 import type {
   FcmAccessToken,
   FcmApnsOptions,
@@ -9,7 +9,7 @@ import type {
   FcmRecipient,
   FcmResponse,
   FcmTokenCache,
-} from './drivers/fcm/types.js';
+} from "./drivers/fcm/types.js";
 export type {
   FcmConfig,
   FcmNotifierConfig,
@@ -21,9 +21,15 @@ export type {
   FcmResponse,
   FcmTokenCache,
 };
-export interface FcmNotifier extends Notifier<'fcm', FcmRecipient, FcmConfig, FcmNativeOptions, FcmResponse> {
+export interface FcmNotifier extends Notifier<
+  "fcm",
+  FcmRecipient,
+  FcmConfig,
+  FcmNativeOptions,
+  FcmResponse
+> {
   native(): FcmNativeClient | undefined;
 }
 export async function createFcmNotifier(config: FcmNotifierConfig): Promise<FcmNotifier> {
-  return new Notifier(await createFcmProvider({ ...config, type: 'fcm' })) as FcmNotifier;
+  return new Notifier(await createFcmProvider({ ...config, type: "fcm" })) as FcmNotifier;
 }

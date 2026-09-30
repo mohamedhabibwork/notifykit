@@ -19,7 +19,7 @@ export interface FcmApnsOptions {
       /** Enables an iOS Notification Service Extension. */
       mutableContent?: boolean;
       /** Raw APNs spelling accepted by FCM's HTTP v1 payload. */
-      'mutable-content'?: 1;
+      "mutable-content"?: 1;
       [key: string]: unknown;
     };
     [key: string]: unknown;
@@ -34,7 +34,7 @@ export interface FcmNativeClient {
 }
 export interface FcmNativeOptions {
   android?: {
-    priority?: 'normal' | 'high';
+    priority?: "normal" | "high";
     ttl?: number;
     collapseKey?: string;
     notification?: Record<string, unknown>;

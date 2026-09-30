@@ -1,5 +1,5 @@
 export interface WebPushConfig {
-  type: 'webpush';
+  type: "webpush";
   vapid: { subject: string; publicKey: string; privateKey: string };
 }
-export type WebPushNotifierConfig = Omit<WebPushConfig, 'type'>;
+export type WebPushNotifierConfig = Omit<WebPushConfig, "type">;

@@ -1,4 +1,4 @@
-import type { NotificationProvider } from './provider.js';
+import type { NotificationProvider } from "./provider.js";
 import type {
   BatchNotificationResult,
   BatchSendOptions,
@@ -9,8 +9,8 @@ import type {
   NotificationResult,
   NotificationSendContext,
   SendOptions,
-} from './types.js';
-import { sendAsCompleted, sendConcurrently, validateMessage } from './utils.js';
+} from "./types.js";
+import { sendAsCompleted, sendConcurrently, validateMessage } from "./utils.js";
 
 export class Notifier<TName extends string, TRecipient, TConfig, TNative, TResponse> {
   readonly name: TName;
@@ -41,7 +41,7 @@ export class Notifier<TName extends string, TRecipient, TConfig, TNative, TRespo
     const context: NotificationSendContext = {
       provider: this.name,
       providerAlias: this.alias,
-      operation: 'send',
+      operation: "send",
       startedAt: performance.now(),
       metadata: options?.metadata,
     };
@@ -66,8 +66,14 @@ export class Notifier<TName extends string, TRecipient, TConfig, TNative, TRespo
     options?: BatchSendOptions,
   ): Promise<BatchNotificationResult<TName, TResponse>> {
     if (this.closed) throw new Error(`Notifier "${this.name}" is closed.`);
-    if (this.provider.sendMany && Array.isArray(messages)) return this.provider.sendMany(messages, options);
-    return sendConcurrently(messages, (message) => this.send(message, options), this.name, options?.concurrency);
+    if (this.provider.sendMany && Array.isArray(messages))
+      return this.provider.sendMany(messages, options);
+    return sendConcurrently(
+      messages,
+      (message) => this.send(message, options),
+      this.name,
+      options?.concurrency,
+    );
   }
   /** Stream completed results for an iterable or async iterable without buffering a batch in memory. */
   sendEach(
@@ -75,7 +81,12 @@ export class Notifier<TName extends string, TRecipient, TConfig, TNative, TRespo
     options?: BatchSendOptions,
   ): AsyncGenerator<NotificationResult<TName, TResponse>> {
     if (this.closed) throw new Error(`Notifier "${this.name}" is closed.`);
-    return sendAsCompleted(messages, (message) => this.send(message, options), this.name, options?.concurrency);
+    return sendAsCompleted(
+      messages,
+      (message) => this.send(message, options),
+      this.name,
+      options?.concurrency,
+    );
   }
   async close(): Promise<void> {
     if (!this.closed) {

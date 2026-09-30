@@ -1,13 +1,15 @@
-import { Notifier } from '../core/notifier.js';
-import type { NotificationCapabilities, NotificationMessage, NotificationResult, SendOptions } from '../core/types.js';
-import type { NotificationProvider } from '../core/provider.js';
-export interface FakeNotifier<TRecipient = { id: string }, TNative = Record<string, unknown>> extends Notifier<
-  'fake',
-  TRecipient,
-  never,
-  TNative,
-  { index: number }
-> {
+import { Notifier } from "../core/notifier.js";
+import type {
+  NotificationCapabilities,
+  NotificationMessage,
+  NotificationResult,
+  SendOptions,
+} from "../core/types.js";
+import type { NotificationProvider } from "../core/provider.js";
+export interface FakeNotifier<
+  TRecipient = { id: string },
+  TNative = Record<string, unknown>,
+> extends Notifier<"fake", TRecipient, never, TNative, { index: number }> {
   messages(): readonly NotificationMessage<TRecipient, TNative>[];
   lastMessage(): NotificationMessage<TRecipient, TNative> | undefined;
   clear(): void;
@@ -20,23 +22,23 @@ export interface FakeState<TRecipient = { id: string }, TNative = Record<string,
   nextError: unknown;
   latency: number;
 }
-export function createFakeState<TRecipient = { id: string }, TNative = Record<string, unknown>>(): FakeState<
-  TRecipient,
-  TNative
-> {
+export function createFakeState<
+  TRecipient = { id: string },
+  TNative = Record<string, unknown>,
+>(): FakeState<TRecipient, TNative> {
   return { messages: [], nextError: undefined, latency: 0 };
 }
 export function createFakeProvider<TRecipient = { id: string }, TNative = Record<string, unknown>>(
   state: FakeState<TRecipient, TNative>,
   capabilities: NotificationCapabilities,
-): NotificationProvider<'fake', TRecipient, never, TNative, { index: number }> {
+): NotificationProvider<"fake", TRecipient, never, TNative, { index: number }> {
   return {
-    name: 'fake',
+    name: "fake",
     capabilities,
     async send(
       message: NotificationMessage<TRecipient, TNative>,
       _options?: SendOptions,
-    ): Promise<NotificationResult<'fake', { index: number }>> {
+    ): Promise<NotificationResult<"fake", { index: number }>> {
       if (state.latency) await new Promise<void>((resolve) => setTimeout(resolve, state.latency));
       if (state.nextError) {
         const error = state.nextError;
@@ -46,15 +48,18 @@ export function createFakeProvider<TRecipient = { id: string }, TNative = Record
       state.messages.push(message);
       return {
         ok: true,
-        provider: 'fake',
-        status: 'accepted',
+        provider: "fake",
+        status: "accepted",
         messageId: String(state.messages.length),
         native: { index: state.messages.length - 1 },
       };
     },
   };
 }
-export function createFakeNotifier<TRecipient = { id: string }, TNative = Record<string, unknown>>(options?: {
+export function createFakeNotifier<
+  TRecipient = { id: string },
+  TNative = Record<string, unknown>,
+>(options?: {
   capabilities?: Partial<NotificationCapabilities>;
 }): FakeNotifier<TRecipient, TNative> {
   const state = createFakeState<TRecipient, TNative>();

@@ -1,6 +1,6 @@
-import { Notifier } from './core/notifier.js';
-import { createHuaweiProvider } from './drivers/huawei/driver.js';
-import type { HuaweiConfig, HuaweiNotifierConfig } from './drivers/huawei/config.js';
+import { Notifier } from "./core/notifier.js";
+import { createHuaweiProvider } from "./drivers/huawei/driver.js";
+import type { HuaweiConfig, HuaweiNotifierConfig } from "./drivers/huawei/config.js";
 import type {
   HuaweiAccessToken,
   HuaweiApnsOptions,
@@ -9,7 +9,7 @@ import type {
   HuaweiRecipient,
   HuaweiResponse,
   HuaweiTokenCache,
-} from './drivers/huawei/types.js';
+} from "./drivers/huawei/types.js";
 export type {
   HuaweiAccessToken,
   HuaweiApnsOptions,
@@ -21,7 +21,7 @@ export type {
   HuaweiTokenCache,
 };
 export interface HuaweiNotifier extends Notifier<
-  'huawei',
+  "huawei",
   HuaweiRecipient,
   HuaweiConfig,
   HuaweiNativeOptions,
@@ -30,5 +30,5 @@ export interface HuaweiNotifier extends Notifier<
   native(): HuaweiNativeClient | undefined;
 }
 export async function createHuaweiNotifier(config: HuaweiNotifierConfig): Promise<HuaweiNotifier> {
-  return new Notifier(await createHuaweiProvider({ ...config, type: 'huawei' })) as HuaweiNotifier;
+  return new Notifier(await createHuaweiProvider({ ...config, type: "huawei" })) as HuaweiNotifier;
 }

@@ -1,7 +1,12 @@
-export { createNotifier, type BuiltInNotificationConfig, type NotifierForConfig } from './factory.js';
-export { NotificationManager, createNotificationManager } from './manager.js';
-export { Notifier } from './core/notifier.js';
-export type { NotificationProvider, NotificationDriverDefinition } from './core/provider.js';
+export {
+  createNotifier,
+  type BuiltInNotificationConfig,
+  type NotifierForConfig,
+} from "./factory.js";
+export { NotificationManager, createNotificationManager } from "./manager.js";
+export { noopLogger, type KitLogger } from "./core/logger.js";
+export { Notifier } from "./core/notifier.js";
+export type { NotificationProvider, NotificationDriverDefinition } from "./core/provider.js";
 export type {
   BatchNotificationResult,
   BatchSendOptions,
@@ -15,7 +20,7 @@ export type {
   NotificationResult,
   NotificationSendContext,
   SendOptions,
-} from './core/types.js';
+} from "./core/types.js";
 export {
   NotificationError,
   NotificationConfigError,
@@ -28,11 +33,11 @@ export {
   NotificationTimeoutError,
   NotificationUnsupportedError,
   isRetryableNotificationError,
-} from './core/errors.js';
-export type { NotificationErrorContext } from './core/errors.js';
-export { createNotificationRouter } from './routing/index.js';
-export { createNotificationTemplates } from './templates/index.js';
-export { createSlackNotifier } from './slack.js';
+} from "./core/errors.js";
+export type { NotificationErrorContext } from "./core/errors.js";
+export { createNotificationRouter } from "./routing/index.js";
+export { createNotificationTemplates } from "./templates/index.js";
+export { createSlackNotifier } from "./slack.js";
 export type {
   SlackConfig,
   SlackNativeOptions,
@@ -40,4 +45,4 @@ export type {
   SlackNotifierConfig,
   SlackRecipient,
   SlackResponse,
-} from './slack.js';
+} from "./slack.js";

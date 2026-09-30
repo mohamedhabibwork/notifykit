@@ -1,6 +1,6 @@
 name: Bug report
 description: Report reproducible NotifyKit behavior that differs from expectations.
-title: 'bug: '
+title: "bug: "
 labels: [bug]
 body:
   - type: markdown

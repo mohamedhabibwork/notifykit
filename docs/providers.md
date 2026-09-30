@@ -14,7 +14,7 @@ All calls preserve each provider's native payload under `native` and preserve it
 Node 20+, Bun 1.1+, and Deno 2+ can use the runtime-neutral core and fetch-based providers. SDK-backed providers follow their SDK's runtime support.
 
 ```ts
-import { createHuaweiNotifier } from '@mohamedhabibwork/notifykit/huawei';
-const huawei = await createHuaweiNotifier({ appId: '...', appSecret: '...' });
-await huawei.send({ to: { token: 'device-token' }, notification: { title: 'Hello' } });
+import { createHuaweiNotifier } from "@mohamedhabibwork/notifykit/huawei";
+const huawei = await createHuaweiNotifier({ appId: "...", appSecret: "..." });
+await huawei.send({ to: { token: "device-token" }, notification: { title: "Hello" } });
 ```

@@ -1,0 +1,156 @@
+# notifykit (@mohamedhabibwork/notifykit)
+
+> Unified TypeScript notifications across push (FCM, APNs, Huawei), web push, email (SMTP), messaging (Telegram, Slack), and custom providers — one async `send()` contract with provider-native options preserved under a `native` key instead of being flattened. The package itself has **zero runtime dependencies**: fetch-based providers need nothing at all and SDK-backed providers dynamically load their optional peer only when created. Named multi-provider managers, templates, routing, middleware/hooks, batch sends, timeouts, cancellation, and retry classification. Node.js >= 20, Bun, Deno. Dual ESM/CJS with full TypeScript declarations.
+
+## Install
+
+```bash
+npm install @mohamedhabibwork/notifykit
+# Install a provider SDK only when you use that provider (optional peers):
+# FCM:       npm i firebase-admin        | Email: npm i nodemailer
+# Web Push:  npm i web-push              | APNs:  npm i @parse/node-apn
+# Telegram / Slack / Huawei: none — plain fetch
+```
+
+**Entrypoints** (tree-shakeable): root (factory, manager, errors, templates,
+routing), `.../fcm`, `.../huawei`, `.../webpush`, `.../email`, `.../telegram`,
+`.../apns`, `.../slack`, `.../custom`, `.../testing` (fake notifier/driver).
+
+A missing optional SDK throws `NotificationConfigError` whose message contains
+the exact `npm install` command — never a module-not-found crash.
+
+## Quick start
+
+```ts
+import { createNotifier } from "@mohamedhabibwork/notifykit";
+
+const notifier = await createNotifier({
+  type: "telegram",                              // inferred provider + types
+  botToken: process.env.TELEGRAM_BOT_TOKEN!,
+});
+
+const result = await notifier.send({
+  to: { chatId: 123456789 },
+  notification: { title: "Deploy", body: "<b>Done</b>" },
+  native: { parse_mode: "HTML" },                // provider-native, typed per provider
+});
+// result: { ok, provider, messageId?, status, retryable?, native? }
+```
+
+## Manager (named providers)
+
+Synchronous factory; providers are created lazily on first `provider()` use.
+
+```ts
+const notifications = createNotificationManager({
+  providers: {
+    alerts: { type: "telegram", botToken: process.env.TELEGRAM_BOT_TOKEN! },
+    transactionalEmail: { type: "email", transport: { type: "smtp", host, port, auth } },
+    push: { type: "fcm", credential: serviceAccount },
+  },
+  default: "alerts",
+});
+
+const notifier = await notifications.provider("transactionalEmail"); // typed per provider
+await notifications.close();                   // closes only initialized providers
+```
+
+## Core API
+
+```ts
+notifier.send(request);                        // single send; request: { to, notification?, data?, native? }
+notifier.sendBatch?(requests, options?);       // where the provider supports it
+notifier.capabilities;                         // { single, batch, token, topic, … } — check before using
+notifier.native();                             // typed native client (admin SDK, transporter, bot API client)
+```
+
+- `to` is provider-shaped: `{ chatId }` (Telegram), `{ token }` / `{ tokens }` /
+  `{ topic }` / `{ condition }` (FCM), `{ deviceId, deviceIdType }` (Huawei),
+  `{ email }` (SMTP), `{ subscription }` (Web Push), `{ channel }` (Slack).
+- Recipients are normalized: string emails/chat ids become structured `to`.
+- `result.retryable` tells you whether a failure is worth requeueing.
+- Every send accepts timeouts and `AbortSignal` cancellation (via send options).
+
+## Batch, timeouts, cancellation
+
+`sendMany()` uses a provider-native batch when available, otherwise controlled
+concurrency. Returns `{ successCount, failureCount, results? }`.
+
+```ts
+const controller = new AbortController();
+const batch = await notifier.sendMany(
+  tokens.map((token) => ({ to: { token }, notification: { title: "Hello" } })),
+  { concurrency: 10, timeout: 10_000, signal: controller.signal, metadata: { event: "campaign" } },
+);
+// `metadata` reaches middleware/hooks only — never the provider payload.
+```
+
+## Middleware and hooks
+
+Middleware wraps a send operation — telemetry, redaction, policy, rate limits.
+
+```ts
+notifier.use(async (context, next) => {
+  const startedAt = performance.now();
+  try {
+    const result = await next();
+    console.info({ provider: context.provider, elapsedMs: performance.now() - startedAt, ok: result.ok });
+    return result;
+  } catch (error) {
+    console.error({ provider: context.provider, error });
+    throw error;
+  }
+});
+```
+
+## Templates and routing
+
+```ts
+import { createNotificationTemplates } from "@mohamedhabibwork/notifykit";
+import { createNotificationRouter } from "@mohamedhabibwork/notifykit";
+
+const templates = createNotificationTemplates({
+  welcome: (v: { name: string }) => ({ title: "Welcome", body: `Hi ${v.name}` }),
+});
+templates.render("welcome", { name: "Ada" });
+
+const router = createNotificationRouter({
+  routes: { "user.created": (event) => notifier.send({ to: event.to, notification: templates.render("welcome", event) }) },
+});
+await router.resolve("user.created", { to: { chatId: 1 }, name: "Ada" });
+```
+
+Both are pure functions over core contracts — no providers, no SDKs.
+
+## Errors
+
+`NotificationError` base with `{ provider, operation?, retryable }` context.
+Subclasses: `NotificationConfigError` (bad config / missing optional SDK —
+message contains the install command), `NotificationAuthenticationError`,
+`NotificationPayloadError` (4xx-class), `NotificationProviderError`,
+`NotificationTimeoutError`, `NotificationRateLimitError`.
+`result.retryable` mirrors this classification so queues can requeue safely.
+
+## Testing
+
+```ts
+import { createFakeNotifier } from "@mohamedhabibwork/notifykit/testing";
+const notifier = createFakeNotifier();          // records sends, no SDK, no network
+await notifier.send({ to: { id: "1" }, notification: { body: "hi" } });
+notifier.messages();                            // recorded messages (also lastMessage(), clear())
+notifier.failNext(new Error("boom"));           // simulate failures; setLatency(ms) for timing
+```
+
+## Runtime support
+
+- Node.js >= 20 (CI on 20/22/24/26), Bun, Deno. Dual ESM/CJS.
+- Fetch-based providers (Telegram, Slack, Huawei) work on all runtimes with
+  zero dependencies; SDK-backed providers load their peer on creation only.
+
+## Links
+
+- npm: https://www.npmjs.com/package/@mohamedhabibwork/notifykit
+- README with full examples: ./README.md (also in the published tarball)
+- Guides: ./docs/providers.md, ./docs/frameworks.md (Express, Fastify, NestJS,
+  Hono, Next.js, Elysia), ./docs/examples.md (end-to-end apps),
+  ./docs/custom-providers.md, ./docs/architecture.md (shipped in the tarball)

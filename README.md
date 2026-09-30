@@ -48,22 +48,37 @@ Install a provider SDK only when you use that provider:
 
 The provider entrypoints are tree-shakeable. SDK-backed drivers dynamically load their peer dependency only when you create the matching notifier.
 
+## Framework integration
+
+A notifier is a plain async `send()` call, so NotifyKit drops into any framework. Ready-made recipes:
+
+| Framework            | Recipe                           |
+| -------------------- | -------------------------------- |
+| Express 4/5          | notification route               |
+| Fastify 4/5          | plugin + named providers         |
+| NestJS 10+           | injectable notifications service |
+| Hono 4               | route handler                    |
+| Next.js (App Router) | server-side route handler        |
+| Elysia (Bun)         | shared async instance            |
+
+See [framework integration](docs/frameworks.md) and [end-to-end examples](docs/examples.md) for copy-paste snippets.
+
 ## Quick start
 
 The root factory infers the notifier from `type`:
 
 ```ts
-import { createNotifier } from '@mohamedhabibwork/notifykit';
+import { createNotifier } from "@mohamedhabibwork/notifykit";
 
 const notifier = await createNotifier({
-  type: 'telegram',
+  type: "telegram",
   botToken: process.env.TELEGRAM_BOT_TOKEN!,
 });
 
 const result = await notifier.send({
   to: { chatId: 123456789 },
-  notification: { body: '<b>Deployment complete</b>' },
-  native: { parse_mode: 'HTML', disable_notification: false },
+  notification: { body: "<b>Deployment complete</b>" },
+  native: { parse_mode: "HTML", disable_notification: false },
 });
 
 console.log(result.provider); // 'telegram'
@@ -74,7 +89,7 @@ console.log(result.native); // native Telegram response
 For the smallest provider-only import, use the provider subpath instead:
 
 ```ts
-import { createTelegramNotifier } from '@mohamedhabibwork/notifykit/telegram';
+import { createTelegramNotifier } from "@mohamedhabibwork/notifykit/telegram";
 
 const notifier = await createTelegramNotifier({
   botToken: process.env.TELEGRAM_BOT_TOKEN!,
@@ -86,13 +101,15 @@ const notifier = await createTelegramNotifier({
 Slack supports either a bot token (to send to a channel) or an incoming webhook. Incoming webhooks are a convenient bridge for other channel-style integrations; use the custom-provider API when their payload differs from Slack's format.
 
 ```ts
-import { createSlackNotifier } from '@mohamedhabibwork/notifykit/slack';
+import { createSlackNotifier } from "@mohamedhabibwork/notifykit/slack";
 
 const slack = await createSlackNotifier({ botToken: process.env.SLACK_BOT_TOKEN! });
 await slack.send({
-  to: { channel: 'C0123456789' },
-  notification: { body: 'Deployment complete.' },
-  native: { blocks: [{ type: 'section', text: { type: 'mrkdwn', text: '*Deployment complete*' } }] },
+  to: { channel: "C0123456789" },
+  notification: { body: "Deployment complete." },
+  native: {
+    blocks: [{ type: "section", text: { type: "mrkdwn", text: "*Deployment complete*" } }],
+  },
 });
 ```
 
@@ -103,7 +120,7 @@ Pass an iterable or async iterable to `sendEach` to keep only the configured num
 ```ts
 async function* recipients() {
   for await (const user of users) {
-    yield { to: { channel: user.slackChannel }, notification: { body: 'Weekly update' } };
+    yield { to: { channel: user.slackChannel }, notification: { body: "Weekly update" } };
   }
 }
 
@@ -143,7 +160,7 @@ The common `data` property is delivered to the provider. Use `SendOptions.metada
 ### Firebase Cloud Messaging
 
 ```ts
-import { createFcmNotifier } from '@mohamedhabibwork/notifykit/fcm';
+import { createFcmNotifier } from "@mohamedhabibwork/notifykit/fcm";
 
 const fcm = await createFcmNotifier({
   credential: {
@@ -151,25 +168,25 @@ const fcm = await createFcmNotifier({
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
     privateKey: process.env.FIREBASE_PRIVATE_KEY!,
   },
-  appName: 'notifications',
+  appName: "notifications",
 });
 
 await fcm.send({
-  to: { token: 'fcm-device-token' },
-  notification: { title: 'New message', body: 'Mohamed sent you a message.' },
-  data: { conversationId: '123' },
+  to: { token: "fcm-device-token" },
+  notification: { title: "New message", body: "Mohamed sent you a message." },
+  data: { conversationId: "123" },
   native: {
-    android: { priority: 'high' },
+    android: { priority: "high" },
     apns: {
-      payload: { aps: { sound: 'default', mutableContent: true } },
-      fcmOptions: { imageUrl: 'https://cdn.example.com/order-image.png' },
+      payload: { aps: { sound: "default", mutableContent: true } },
+      fcmOptions: { imageUrl: "https://cdn.example.com/order-image.png" },
     },
   },
 });
 
 await fcm.send({
-  to: { tokens: ['token-a', 'token-b'] },
-  notification: { title: 'Maintenance window' },
+  to: { tokens: ["token-a", "token-b"] },
+  notification: { title: "Maintenance window" },
 });
 ```
 
@@ -184,12 +201,12 @@ const native = fcm.native();
 const token = await native?.getAccessToken();
 
 await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-  method: 'POST',
+  method: "POST",
   headers: {
     authorization: `Bearer ${token?.accessToken}`,
-    'content-type': 'application/json',
+    "content-type": "application/json",
   },
-  body: JSON.stringify({ message: { token: 'device-token', data: { event: 'sync' } } }),
+  body: JSON.stringify({ message: { token: "device-token", data: { event: "sync" } } }),
 });
 ```
 
@@ -200,7 +217,7 @@ FCM credentials already cache tokens internally. Pass `auth.tokenCache` to share
 Huawei Push Kit uses standard `fetch` and caches the OAuth token in memory by default. Provide a `tokenCache` to persist it in your own cache.
 
 ```ts
-import { createHuaweiNotifier } from '@mohamedhabibwork/notifykit/huawei';
+import { createHuaweiNotifier } from "@mohamedhabibwork/notifykit/huawei";
 
 const huawei = await createHuaweiNotifier({
   appId: process.env.HUAWEI_APP_ID!,
@@ -208,12 +225,12 @@ const huawei = await createHuaweiNotifier({
 });
 
 await huawei.send({
-  to: { token: 'huawei-device-token' },
-  notification: { title: 'New message', body: 'You have a new message.' },
+  to: { token: "huawei-device-token" },
+  notification: { title: "New message", body: "You have a new message." },
   native: {
     android: {
       notification: {
-        click_action: { type: 1, intent: 'app://messages' },
+        click_action: { type: 1, intent: "app://messages" },
       },
     },
   },
@@ -227,10 +244,10 @@ Huawei tokens are cached according to the OAuth `expires_in` duration. Use the n
 ```ts
 const cache = {
   async get() {
-    return redis.get('huawei-access-token');
+    return redis.get("huawei-access-token");
   },
   async set(token: { accessToken: string; expiresAt: number }) {
-    await redis.set('huawei-access-token', token);
+    await redis.set("huawei-access-token", token);
   },
 };
 
@@ -248,11 +265,11 @@ For a Huawei iOS payload that requires a Notification Service Extension, set `na
 ### Web Push
 
 ```ts
-import { createWebPushNotifier } from '@mohamedhabibwork/notifykit/webpush';
+import { createWebPushNotifier } from "@mohamedhabibwork/notifykit/webpush";
 
 const webpush = await createWebPushNotifier({
   vapid: {
-    subject: 'mailto:admin@example.com',
+    subject: "mailto:admin@example.com",
     publicKey: process.env.VAPID_PUBLIC_KEY!,
     privateKey: process.env.VAPID_PRIVATE_KEY!,
   },
@@ -260,35 +277,35 @@ const webpush = await createWebPushNotifier({
 
 await webpush.send({
   to: { endpoint: subscription.endpoint, keys: subscription.keys },
-  notification: { title: 'Update available', body: 'Open the app to update.' },
-  data: { url: '/updates/100' },
-  native: { TTL: 60, urgency: 'high', topic: 'updates' },
+  notification: { title: "Update available", body: "Open the app to update." },
+  data: { url: "/updates/100" },
+  native: { TTL: 60, urgency: "high", topic: "updates" },
 });
 ```
 
 ### SMTP email
 
 ```ts
-import { createEmailNotifier } from '@mohamedhabibwork/notifykit/email';
+import { createEmailNotifier } from "@mohamedhabibwork/notifykit/email";
 
 const email = await createEmailNotifier({
   transport: {
-    type: 'smtp',
+    type: "smtp",
     host: process.env.SMTP_HOST!,
     port: 587,
     secure: false,
     auth: { user: process.env.SMTP_USER!, pass: process.env.SMTP_PASSWORD! },
   },
-  defaults: { from: { email: 'notifications@example.com', name: 'Example App' } },
+  defaults: { from: { email: "notifications@example.com", name: "Example App" } },
 });
 
 await email.send({
-  to: { email: 'customer@example.com', name: 'Customer' },
-  notification: { title: 'Invoice ready', body: 'Your invoice is ready.' },
+  to: { email: "customer@example.com", name: "Customer" },
+  notification: { title: "Invoice ready", body: "Your invoice is ready." },
   native: {
-    html: '<h1>Invoice ready</h1><p>Your invoice is ready.</p>',
-    replyTo: 'support@example.com',
-    headers: { 'X-Application': 'api' },
+    html: "<h1>Invoice ready</h1><p>Your invoice is ready.</p>",
+    replyTo: "support@example.com",
+    headers: { "X-Application": "api" },
   },
 });
 ```
@@ -298,17 +315,17 @@ An email recipient may be a string, `{ email, name? }`, or a readonly list of ei
 ### Telegram
 
 ```ts
-import { createTelegramNotifier } from '@mohamedhabibwork/notifykit/telegram';
+import { createTelegramNotifier } from "@mohamedhabibwork/notifykit/telegram";
 
 const telegram = await createTelegramNotifier({ botToken: process.env.TELEGRAM_BOT_TOKEN! });
 
 await telegram.send({
-  to: { chatId: '-100123456789' },
-  notification: { body: '<b>Server CPU passed 90%</b>' },
+  to: { chatId: "-100123456789" },
+  notification: { body: "<b>Server CPU passed 90%</b>" },
   native: {
-    parse_mode: 'HTML',
+    parse_mode: "HTML",
     reply_markup: {
-      inline_keyboard: [[{ text: 'Open dashboard', url: 'https://example.com/dashboard' }]],
+      inline_keyboard: [[{ text: "Open dashboard", url: "https://example.com/dashboard" }]],
     },
   },
 });
@@ -319,7 +336,7 @@ Use `{ chatId }` for a chat or `{ channel }` for a channel.
 ### Apple Push Notification service
 
 ```ts
-import { createApnsNotifier } from '@mohamedhabibwork/notifykit/apns';
+import { createApnsNotifier } from "@mohamedhabibwork/notifykit/apns";
 
 const apns = await createApnsNotifier({
   token: {
@@ -331,9 +348,9 @@ const apns = await createApnsNotifier({
 });
 
 await apns.send({
-  to: { deviceToken: 'apns-device-token' },
-  notification: { title: 'Invoice ready', body: 'Your invoice is ready.' },
-  native: { topic: 'com.example.app', pushType: 'alert', priority: 10, collapseId: 'invoice-1002' },
+  to: { deviceToken: "apns-device-token" },
+  notification: { title: "Invoice ready", body: "Your invoice is ready." },
+  native: { topic: "com.example.app", pushType: "alert", priority: 10, collapseId: "invoice-1002" },
 });
 ```
 
@@ -344,27 +361,27 @@ Recipients may be `{ deviceToken }` or `{ deviceTokens }`.
 Use a manager when an application owns multiple named provider instances. Instances initialize only when first requested.
 
 ```ts
-import { createNotificationManager } from '@mohamedhabibwork/notifykit';
+import { createNotificationManager } from "@mohamedhabibwork/notifykit";
 
 const notifications = createNotificationManager({
-  default: 'alerts',
+  default: "alerts",
   providers: {
-    alerts: { type: 'telegram', botToken: process.env.TELEGRAM_BOT_TOKEN! },
+    alerts: { type: "telegram", botToken: process.env.TELEGRAM_BOT_TOKEN! },
     transactionalEmail: {
-      type: 'email',
-      transport: { type: 'smtp', host: 'smtp.example.com', port: 587 },
-      defaults: { from: 'notifications@example.com' },
+      type: "email",
+      transport: { type: "smtp", host: "smtp.example.com", port: 587 },
+      defaults: { from: "notifications@example.com" },
     },
   },
 });
 
-const alerts = await notifications.provider('alerts');
-await alerts.send({ to: { chatId: 1234 }, notification: { body: 'Deploy complete.' } });
+const alerts = await notifications.provider("alerts");
+await alerts.send({ to: { chatId: 1234 }, notification: { body: "Deploy complete." } });
 
-const mail = await notifications.provider('transactionalEmail');
+const mail = await notifications.provider("transactionalEmail");
 await mail.send({
-  to: 'user@example.com',
-  notification: { title: 'Deploy complete', body: 'Your deployment finished.' },
+  to: "user@example.com",
+  notification: { title: "Deploy complete", body: "Your deployment finished." },
 });
 
 await notifications.warmup();
@@ -377,12 +394,15 @@ await notifications.close();
 
 ```ts
 await notifications.sendMulti([
-  { provider: 'alerts', message: { to: { chatId: 1234 }, notification: { body: 'Payment received.' } } },
   {
-    provider: 'transactionalEmail',
+    provider: "alerts",
+    message: { to: { chatId: 1234 }, notification: { body: "Payment received." } },
+  },
+  {
+    provider: "transactionalEmail",
     message: {
-      to: 'customer@example.com',
-      notification: { title: 'Payment received', body: 'Your payment was confirmed.' },
+      to: "customer@example.com",
+      notification: { title: "Payment received", body: "Your payment was confirmed." },
     },
   },
 ]);
@@ -397,14 +417,14 @@ const controller = new AbortController();
 
 const batch = await fcm.sendMany(
   [
-    { to: { token: 'token-a' }, notification: { title: 'Hello' } },
-    { to: { token: 'token-b' }, notification: { title: 'Hello' } },
+    { to: { token: "token-a" }, notification: { title: "Hello" } },
+    { to: { token: "token-b" }, notification: { title: "Hello" } },
   ],
   {
     concurrency: 10,
     timeout: 10_000,
     signal: controller.signal,
-    metadata: { tenantId: 'tenant-1', event: 'campaign.created' },
+    metadata: { tenantId: "tenant-1", event: "campaign.created" },
   },
 );
 
@@ -422,7 +442,11 @@ telegram.use(async (context, next) => {
   const startedAt = performance.now();
   try {
     const result = await next();
-    console.info({ provider: context.provider, elapsedMs: performance.now() - startedAt, ok: result.ok });
+    console.info({
+      provider: context.provider,
+      elapsedMs: performance.now() - startedAt,
+      ok: result.ok,
+    });
     return result;
   } catch (error) {
     console.error({ provider: context.provider, error });
@@ -448,13 +472,13 @@ NotifyKit preserves the original provider error under `cause` or `native` and ex
 - `NotificationUnsupportedError`
 
 ```ts
-import { isRetryableNotificationError } from '@mohamedhabibwork/notifykit';
+import { isRetryableNotificationError } from "@mohamedhabibwork/notifykit";
 
 try {
-  await telegram.send({ to: { chatId: 1234 }, notification: { body: 'Hello' } });
+  await telegram.send({ to: { chatId: 1234 }, notification: { body: "Hello" } });
 } catch (error) {
   if (isRetryableNotificationError(error)) {
-    await queue.add('notification.retry', { provider: 'alerts' });
+    await queue.add("notification.retry", { provider: "alerts" });
   }
   throw error;
 }
@@ -467,11 +491,11 @@ NotifyKit does not persist retries or implement a queue. This keeps infrastructu
 Custom providers are first-class and rely only on public NotifyKit exports.
 
 ```ts
-import { createNotifier } from '@mohamedhabibwork/notifykit';
-import { defineNotificationProvider } from '@mohamedhabibwork/notifykit/custom';
+import { createNotifier } from "@mohamedhabibwork/notifykit";
+import { defineNotificationProvider } from "@mohamedhabibwork/notifykit/custom";
 
 interface DiscordConfig {
-  type: 'discord';
+  type: "discord";
   webhookUrl: string;
 }
 interface DiscordRecipient {
@@ -482,33 +506,46 @@ interface DiscordNative {
   avatar_url?: string;
 }
 
-const discordProvider = defineNotificationProvider<'discord', DiscordConfig, DiscordRecipient, DiscordNative, Response>(
-  {
-    name: 'discord',
-    capabilities: { single: true, batch: false, notification: true, data: true },
-    async create(config) {
-      return {
-        name: 'discord',
-        capabilities: { single: true, batch: false, notification: true, data: true },
-        async send(message) {
-          const native = await fetch(config.webhookUrl, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ content: message.notification?.body, ...message.native }),
-          });
-          return { ok: native.ok, provider: 'discord', status: native.ok ? 'accepted' : 'failed', native };
-        },
-      };
-    },
+const discordProvider = defineNotificationProvider<
+  "discord",
+  DiscordConfig,
+  DiscordRecipient,
+  DiscordNative,
+  Response
+>({
+  name: "discord",
+  capabilities: { single: true, batch: false, notification: true, data: true },
+  async create(config) {
+    return {
+      name: "discord",
+      capabilities: { single: true, batch: false, notification: true, data: true },
+      async send(message) {
+        const native = await fetch(config.webhookUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ content: message.notification?.body, ...message.native }),
+        });
+        return {
+          ok: native.ok,
+          provider: "discord",
+          status: native.ok ? "accepted" : "failed",
+          native,
+        };
+      },
+    };
   },
-);
+});
 
 const discord = await createNotifier(
-  { type: 'discord', webhookUrl: process.env.DISCORD_WEBHOOK_URL! },
+  { type: "discord", webhookUrl: process.env.DISCORD_WEBHOOK_URL! },
   { providers: [discordProvider] },
 );
 
-await discord.send({ to: {}, notification: { body: 'Deployment complete.' }, native: { username: 'Deploy Bot' } });
+await discord.send({
+  to: {},
+  notification: { body: "Deployment complete." },
+  native: { username: "Deploy Bot" },
+});
 ```
 
 ## Templates and routing helpers
@@ -516,24 +553,24 @@ await discord.send({ to: {}, notification: { body: 'Deployment complete.' }, nat
 Templates are ordinary typed functions—there is no required template engine.
 
 ```ts
-import { createNotificationTemplates, createNotificationRouter } from '@mohamedhabibwork/notifykit';
+import { createNotificationTemplates, createNotificationRouter } from "@mohamedhabibwork/notifykit";
 
 const templates = createNotificationTemplates({
   orderShipped: ({ orderId }: { orderId: string }) => ({
-    title: 'Order shipped',
+    title: "Order shipped",
     body: `Order ${orderId} is on the way.`,
   }),
 });
 
-const message = templates.render('orderShipped', { orderId: 'ORD-1001' });
+const message = templates.render("orderShipped", { orderId: "ORD-1001" });
 
 const router = createNotificationRouter({
   orderShipped: ({ email }: { email: string }) => [
-    { provider: 'email', message: { to: email, notification: message } },
+    { provider: "email", message: { to: email, notification: message } },
   ],
 });
 
-const channels = await router.resolve('orderShipped', { email: 'customer@example.com' });
+const channels = await router.resolve("orderShipped", { email: "customer@example.com" });
 ```
 
 The router resolves your application event into channels; your application decides how to send those channels through a manager.
@@ -543,16 +580,16 @@ The router resolves your application event into channels; your application decid
 Use the fake notifier to test application behavior without credentials or network calls.
 
 ```ts
-import { createFakeNotifier } from '@mohamedhabibwork/notifykit/testing';
+import { createFakeNotifier } from "@mohamedhabibwork/notifykit/testing";
 
 const notifier = createFakeNotifier<{ userId: string }>();
 
-await notifier.send({ to: { userId: '100' }, notification: { title: 'Hello' } });
+await notifier.send({ to: { userId: "100" }, notification: { title: "Hello" } });
 
 console.log(notifier.messages());
 console.log(notifier.lastMessage());
 
-notifier.failNext(new Error('temporary provider outage'));
+notifier.failNext(new Error("temporary provider outage"));
 notifier.setLatency(20);
 notifier.clear();
 ```
@@ -560,19 +597,22 @@ notifier.clear();
 To test code that goes through `createNotifier` (factories, managers, routers), use the fake driver instead. It plugs into the custom-provider path, so your production wiring runs unchanged against a recording fake.
 
 ```ts
-import { createFakeDriver } from '@mohamedhabibwork/notifykit/testing';
+import { createFakeDriver } from "@mohamedhabibwork/notifykit/testing";
 
 const driver = createFakeDriver<{ userId: string }>();
 
-const notifier = await createNotifier({ type: 'fake' }, { providers: [driver] });
-const manager = createNotificationManager({ providers: { alerts: { type: 'fake' } }, default: 'alerts' });
+const notifier = await createNotifier({ type: "fake" }, { providers: [driver] });
+const manager = createNotificationManager({
+  providers: { alerts: { type: "fake" } },
+  default: "alerts",
+});
 
-await notifier.send({ to: { userId: '100' }, notification: { title: 'Hello' } });
+await notifier.send({ to: { userId: "100" }, notification: { title: "Hello" } });
 
 console.log(driver.messages());
 console.log(driver.lastMessage());
 
-driver.failNext(new Error('temporary provider outage'));
+driver.failNext(new Error("temporary provider outage"));
 driver.setLatency(20);
 driver.clear();
 ```
@@ -617,6 +657,30 @@ npx git-cliff --unreleased
 npm run changelog
 ```
 
+## Use with AI (llms.txt)
+
+This repo ships an `llms.txt` — a curated, LLM-readable map of the API, semantics, and docs, written so coding assistants get it right the first time.
+
+- **Cursor / Claude Code / Copilot**: open [`llms.txt`](https://github.com/mohamedhabibwork/notifykit/blob/main/llms.txt) or paste the raw text into your rules file (`CLAUDE.md`, `.cursorrules`, `AGENTS.md`).
+- **ChatGPT / Custom GPTs / Perplexity**: add the raw URL — https://raw.githubusercontent.com/mohamedhabibwork/notifykit/main/llms.txt
+- **Offline / agents in CI**: `llms.txt`, the README, and every guide in `docs/` ship inside the npm tarball, so agents can read them straight from `node_modules/@mohamedhabibwork/notifykit/`.
+- **Contributing to this repo**: [AGENTS.md](AGENTS.md) documents layout, commands, and conventions for coding agents.
+
 ## License
 
 [MIT](./LICENSE)
+
+## Logging with loggerkit
+
+Managers accept an optional `logger` (any object with `debug/info/warn/error`), so a
+[`@mohamedhabibwork/loggerkit`](https://github.com/mohamedhabibwork/loggerkit) `Logger` plugs in
+directly with no extra dependency:
+
+```ts
+import { createLogger } from "@mohamedhabibwork/loggerkit";
+import { createNotificationManager } from "@mohamedhabibwork/notifykit";
+
+const manager = createNotificationManager({ ...config, logger: createLogger({ name: "notify" }) });
+```
+
+Provider creation and close events are logged at `debug`; creation failures at `error`.

@@ -52,6 +52,22 @@
       "types": "./dist/slack.d.ts",
       "import": "./dist/slack.js"
     },
+    "./whatsapp": {
+      "types": "./dist/whatsapp.d.ts",
+      "import": "./dist/whatsapp.js"
+    },
+    "./twilio": {
+      "types": "./dist/twilio.d.ts",
+      "import": "./dist/twilio.js"
+    },
+    "./vonage": {
+      "types": "./dist/vonage.d.ts",
+      "import": "./dist/vonage.js"
+    },
+    "./resend": {
+      "types": "./dist/resend.d.ts",
+      "import": "./dist/resend.js"
+    },
     "./custom": {
       "types": "./dist/custom.d.ts",
       "import": "./dist/custom.js"

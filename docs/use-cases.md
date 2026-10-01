@@ -31,14 +31,40 @@ const fcm = await createNotifier({
 await fcm.send({
   to: { token: deviceToken },
   notification: { title: "New message", body: "You have 1 unread message." },
-  data: { threadId: "t_42" },
+  data: { conversationId: "c_42" },
   priority: "high",
   ttl: 3600,
-  collapseKey: "inbox",
+  collapseKey: "c_42",
+  native: {
+    // iOS tray behavior: FCM's collapseKey does not reach APNs, so set the
+    // APNs equivalents explicitly or notifications stack in Notification Center.
+    apns: { collapseId: "c_42", threadId: "c_42" },
+  },
 });
 ```
 
-APNs (`type: "apns"`) and Huawei (`type: "huawei"`) use the same message model; see the README provider guides for their configuration.
+APNs (`type: "apns"`) and Huawei (`type: "huawei"`) use the same message model; see the README provider guides for their configuration. On a direct APNs notifier, the same tray behavior comes from the native fields, plus the iOS presentation options:
+
+```ts
+import { createApnsNotifier } from "@mohamedhabibwork/notifykit/apns";
+
+const apns = await createApnsNotifier({
+  token: { key: APNS_KEY, keyId: APNS_KEY_ID, teamId: APPLE_TEAM_ID },
+});
+await apns.send({
+  to: { deviceToken },
+  notification: { title: "New message", body: "You have 1 unread message." },
+  ttl: 3600,
+  collapseKey: "c_42",
+  native: {
+    topic: "com.example.app",
+    threadId: "c_42",
+    sound: "default",
+    badge: 1,
+    category: "MESSAGE_ACTIONS",
+  },
+});
+```
 
 ## 3. Browser web push
 
@@ -47,8 +73,15 @@ const webpush = await createNotifier({
   type: "webpush",
   vapid: { subject: "mailto:ops@example.com", publicKey: VAPID_PUBLIC, privateKey: VAPID_PRIVATE },
 });
-await webpush.send({ to: subscription, notification: { title: "Price drop", body: "Now $19" } });
+await webpush.send({
+  to: subscription,
+  notification: { title: "Price drop", body: "Now $19" },
+  ttl: 3600,
+  native: { urgency: "high", topic: "price-drops" },
+});
 ```
+
+Core `ttl` fills `native.TTL` when unset. Failed sends report `retryable: true` for 429/5xx and `retryable: false` for 404/410 (subscription expired) so workers can prune dead subscriptions.
 
 ## 4. Email (SMTP)
 
@@ -61,6 +94,24 @@ const mail = await createNotifier({
 await mail.send({ to: "user@example.com", notification: { title: "Welcome", body: "Hi there!" } });
 ```
 
+Core `priority` maps to SMTP precedence headers, and `native.inReplyTo`/`references` thread replies in mail clients:
+
+```ts
+await mail.send({
+  to: "user@example.com",
+  notification: { title: "Payment overdue", body: "Please settle invoice #1002." },
+  priority: "high",
+  native: {
+    html: "<p>Please settle <b>invoice #1002</b>.</p>",
+    inReplyTo: "<invoice-1002@example.com>",
+    references: ["<invoice-1002@example.com>"],
+    attachments: [
+      { filename: "invoice-1002.pdf", content: pdfBytes, contentType: "application/pdf" },
+    ],
+  },
+});
+```
+
 ## 5. Chat channels (Telegram, Slack)
 
 ```ts
@@ -68,6 +119,33 @@ import { createSlackNotifier } from "@mohamedhabibwork/notifykit/slack";
 
 const slack = await createSlackNotifier({ webhookUrl: process.env.SLACK_WEBHOOK_URL! });
 await slack.send({ to: {}, notification: { body: "Build #812 passed" } });
+```
+
+Threading and link handling are native options on both channels:
+
+```ts
+// Telegram: reply in a topic with the modern link-preview option.
+await telegram.send({
+  to: { chatId: "-100123456789" },
+  notification: { body: 'Deploy finished — <a href="https://example.com/logs">logs</a>' },
+  native: {
+    parse_mode: "HTML",
+    message_thread_id: 12,
+    link_preview_options: { is_disabled: true },
+    reply_parameters: { message_id: 418 },
+  },
+});
+
+// Slack: thread follow-up with structured application metadata.
+await slack.send({
+  to: { channel: "C0123456789" },
+  notification: { body: "Rollback triggered." },
+  native: {
+    thread_ts: "1727800000.000100",
+    reply_broadcast: true,
+    metadata: { event_type: "deploy_rollback", event_payload: { build: 812 } },
+  },
+});
 ```
 
 ## 6. Rich content: images, actions and provider-native options
@@ -81,11 +159,14 @@ await fcm.send({
     imageUrl: "https://cdn.example.com/box.png",
   },
   actions: [{ id: "track", title: "Track", url: "https://example.com/orders/1" }],
-  native: { android: { notification: { channelId: "orders" } } },
+  native: {
+    android: { notification: { channelId: "orders" } },
+    apns: { threadId: "orders" },
+  },
 });
 ```
 
-`native` is passed through to the provider untouched, so every provider feature stays reachable.
+`native` is passed through to the provider untouched, so every provider feature stays reachable. (FCM's `native.apns` is the one exception: `collapseId` and `threadId` shorthands are normalized into the APNs `apns-collapse-id` header and `aps["thread-id"]` payload — see use case 2.)
 
 ## 7. Topic / broadcast sends
 
@@ -96,7 +177,14 @@ await fcm.send({
 });
 ```
 
-Check `notifier.capabilities.topic` before relying on it for a provider.
+Check `notifier.capabilities.topic` before relying on it for a provider. Huawei supports topic sends and condition expressions:
+
+```ts
+await huawei.send({
+  to: { condition: "'news' in topics && !('blocked' in topics)" },
+  notification: { title: "Breaking", body: "..." },
+});
+```
 
 ## 8. Named providers with a manager (lazy init, shared lifecycle)
 

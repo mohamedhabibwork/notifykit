@@ -20,7 +20,7 @@ Every supported use case, with a runnable example, is listed in [docs/use-cases.
 
 ## Features
 
-- First-party FCM, Huawei Push Kit, Web Push, SMTP email, Telegram, Slack, and APNs providers.
+- First-party FCM, Huawei Push Kit, Web Push, SMTP email, Telegram, Slack, APNs, WhatsApp Business Cloud API, Twilio, Vonage SMS, and Resend email providers.
 - Native provider options and responses remain fully accessible and typed.
 - Optional peer dependencies: installing one provider does not load every provider SDK.
 - Node.js 20+, Bun, and Deno-compatible fetch-based core.
@@ -47,8 +47,14 @@ Install a provider SDK only when you use that provider:
 | Telegram Bot API                | `@mohamedhabibwork/notifykit/telegram` | None (`fetch`)                |
 | Apple Push Notification service | `@mohamedhabibwork/notifykit/apns`     | `npm install @parse/node-apn` |
 | Slack                           | `@mohamedhabibwork/notifykit/slack`    | None (`fetch`)                |
+| WhatsApp Business Cloud API     | `@mohamedhabibwork/notifykit/whatsapp` | None (`fetch`)                |
+| Twilio Messaging (SMS/WhatsApp) | `@mohamedhabibwork/notifykit/twilio`   | None (`fetch`)                |
+| Vonage SMS API                  | `@mohamedhabibwork/notifykit/vonage`   | None (`fetch`)                |
+| Resend Email API                | `@mohamedhabibwork/notifykit/resend`   | None (`fetch`)                |
 
 The provider entrypoints are tree-shakeable. SDK-backed drivers dynamically load their peer dependency only when you create the matching notifier.
+
+Each provider has a dedicated guide — configuration, templates, delivery-status callbacks, error handling, and full examples: [docs/providers.md](docs/providers.md) indexes them ([whatsapp](docs/whatsapp.md), [twilio](docs/twilio.md), [vonage](docs/vonage.md), [resend](docs/resend.md), [fcm](docs/fcm.md), [huawei](docs/huawei.md), [webpush](docs/webpush.md), [email](docs/email.md), [telegram](docs/telegram.md), [apns](docs/apns.md), [slack](docs/slack.md)).
 
 ## Framework integration
 
@@ -115,6 +121,8 @@ await slack.send({
 });
 ```
 
+Additional native options: `thread_ts`/`reply_broadcast` (threading), `attachments`, `unfurl_links`/`unfurl_media`, `username`/`icon_emoji`/`icon_url` (webhook identity), `as_user`, `link_names`, `parse`, and `metadata` for structured application metadata.
+
 ### Streaming bulk sends
 
 Pass an iterable or async iterable to `sendEach` to keep only the configured number of in-flight messages in memory. Results are yielded as soon as each send completes. `sendMany` also accepts generators, but it collects all results before returning for backwards compatibility.
@@ -157,6 +165,8 @@ await notifier.send({
 
 The common `data` property is delivered to the provider. Use `SendOptions.metadata` for tracing, tenancy, or audit values that must never leave your application.
 
+The generic `collapseKey`, `ttl`, and `priority` fields map to each push provider's native equivalent by default (FCM/Huawei Android config, APNs `collapseId`/`expiry`, Web Push `TTL`, email SMTP precedence); a matching `native.*` field always overrides them. See the provider guides below for the exact mapping.
+
 ## Provider guides
 
 ### Firebase Cloud Messaging
@@ -177,9 +187,13 @@ await fcm.send({
   to: { token: "fcm-device-token" },
   notification: { title: "New message", body: "Mohamed sent you a message." },
   data: { conversationId: "123" },
+  priority: "high",
+  ttl: 3600,
+  collapseKey: "conversation-123",
   native: {
-    android: { priority: "high" },
     apns: {
+      collapseId: "conversation-123",
+      threadId: "conversation-123",
       payload: { aps: { sound: "default", mutableContent: true } },
       fcmOptions: { imageUrl: "https://cdn.example.com/order-image.png" },
     },
@@ -194,9 +208,13 @@ await fcm.send({
 
 Recipients may be `{ token }`, `{ tokens }`, `{ topic }`, or `{ condition }`. `fcm.native()` returns the Firebase Messaging client.
 
+Core-level `priority`, `ttl`, and `collapseKey` default into the Android config (`android.priority`, `android.ttl`, `android.collapseKey`) unless `native.android` overrides them.
+
 ### Access tokens and mutable content
 
 For rich iOS notifications, use `native.apns.payload.aps.mutableContent: true` together with `native.apns.fcmOptions.imageUrl`. This enables the app's Notification Service Extension to process the attachment before display. `fcm.native()` also exposes `getAccessToken()` for direct, authenticated FCM HTTP v1 calls when the SDK abstraction is insufficient.
+
+For iOS tray behavior, use `native.apns.collapseId` (sent as the `apns-collapse-id` header — notifications sharing it replace each other instead of stacking) and `native.apns.threadId` (sent as `thread-id` in the `aps` payload — groups related notifications in Notification Center). FCM's `android.collapseKey` does not apply to iOS.
 
 ```ts
 const native = fcm.native();
@@ -239,7 +257,7 @@ await huawei.send({
 });
 ```
 
-Recipients may be `{ token }`, `{ tokens }`, or `{ topic }`.
+Recipients may be `{ token }`, `{ tokens }`, `{ topic }`, or `{ condition }` — a Push Kit condition expression such as `"'news' in topics && ('sports' in topics || !('health' in topics))"`.
 
 Huawei tokens are cached according to the OAuth `expires_in` duration. Use the native token client for a custom Huawei API request, or provide a cache for reuse across notifier instances:
 
@@ -285,6 +303,8 @@ await webpush.send({
 });
 ```
 
+`native.TTL`, `native.urgency`, `native.topic`, `native.headers`, and `native.contentEncoding` map 1:1 to the `web-push` library's options. Core-level `ttl` fills in `TTL` when `native.TTL` is not set. Delivery failures are classified by HTTP status: 429 and 5xx come back as retryable, 404/410 (expired subscription) as permanent.
+
 ### SMTP email
 
 ```ts
@@ -314,6 +334,8 @@ await email.send({
 
 An email recipient may be a string, `{ email, name? }`, or a readonly list of either. A message needs `notification.body`, `native.text`, or `native.html`.
 
+Core-level `priority` maps to the SMTP precedence headers (`"high"` sets `Importance`/`Priority`, `"low"` sets `Precedence: bulk`); `native.priority` overrides it. For mail-client threading, set `native.inReplyTo` and `native.references`. Attachments accept `filename`, `content`, `contentType`, `cid` (for inline images in `native.html`), and `encoding`.
+
 ### Telegram
 
 ```ts
@@ -333,7 +355,7 @@ await telegram.send({
 });
 ```
 
-Use `{ chatId }` for a chat or `{ channel }` for a channel.
+Use `{ chatId }` for a chat or `{ channel }` for a channel. Supported native options include `parse_mode`, `entities`, `link_preview_options` (the official replacement for the deprecated `disable_web_page_preview`), `disable_notification`, `protect_content`, `message_thread_id` (forum topics), `message_effect_id`, `reply_parameters`, and `reply_markup`.
 
 ### Apple Push Notification service
 
@@ -352,11 +374,22 @@ const apns = await createApnsNotifier({
 await apns.send({
   to: { deviceToken: "apns-device-token" },
   notification: { title: "Invoice ready", body: "Your invoice is ready." },
-  native: { topic: "com.example.app", pushType: "alert", priority: 10, collapseId: "invoice-1002" },
+  native: {
+    topic: "com.example.app",
+    pushType: "alert",
+    priority: 10,
+    collapseId: "invoice-1002",
+    threadId: "invoices",
+    sound: "default",
+    badge: 1,
+    category: "INVOICE_ACTIONS",
+  },
 });
 ```
 
 Recipients may be `{ deviceToken }` or `{ deviceTokens }`.
+
+Beyond the fields in the example, `native` supports `mutableContent`, `contentAvailable` (silent background updates), `urlArgs`, and a full custom `alert` object (`title-loc-key`, `loc-args`, `launch-image`, and so on) that overrides the title/body derived from `notification`. Core-level `ttl` becomes the APNs `expiry` (now + ttl seconds) when `native.expiration` is not set, and core-level `collapseKey` fills `collapseId`.
 
 ## Named providers with `NotificationManager`
 

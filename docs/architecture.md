@@ -6,14 +6,14 @@ The core contains only Web Platform APIs and generic contracts. SDK-backed provi
 
 Dependencies point one way, bottom-up:
 
-| Layer                            | Contents                                                   | May depend on                |
-| -------------------------------- | ---------------------------------------------------------- | ---------------------------- |
-| `src/core/`                      | Contracts, errors, utils, dynamic-import helper            | itself only                  |
-| `src/drivers/<provider>/`        | One folder per provider (config, driver, types)            | core + its own folder        |
-| `src/routing/`, `src/templates/` | Pure policy over core                                      | core only                    |
-| `src/policies/`                  | Retry, rate-limit, dedupe, dry-run, fallback, preferences  | core + itself                |
-| `src/testing/`                   | Fake driver/provider for consumers                         | core + itself, never drivers |
-| `src/*.ts` (root)                | Composition: index, factory, manager, per-provider facades | anything                     |
+| Layer                            | Contents                                                                  | May depend on                |
+| -------------------------------- | ------------------------------------------------------------------------- | ---------------------------- |
+| `src/core/`                      | Contracts, errors, utils, dynamic-import helper                           | itself only                  |
+| `src/drivers/<provider>/`        | One folder per provider (config, driver, types, optional webhook helpers) | core + its own folder        |
+| `src/routing/`, `src/templates/` | Pure policy over core                                                     | core only                    |
+| `src/policies/`                  | Retry, rate-limit, dedupe, dry-run, fallback, preferences                 | core + itself                |
+| `src/testing/`                   | Fake driver/provider for consumers                                        | core + itself, never drivers |
+| `src/*.ts` (root)                | Composition: index, factory, manager, per-provider facades                | anything                     |
 
 These rules are enforced by `tests/architecture.test.ts`: it walks every file under `src/`,
 resolves each relative import, and fails when a layer reaches outside its boundary. If a
@@ -22,7 +22,7 @@ never bypass the test with an absolute import.
 
 ### Adding a provider
 
-1. Create `src/drivers/<name>/` with `config.ts`, `driver.ts`, `types.ts`.
+1. Create `src/drivers/<name>/` with `config.ts`, `driver.ts`, `types.ts`, and — when the provider reports delivery status via webhooks — a `webhook.ts` with pure parse/verify helpers (signature checks use `src/core/webhooks.ts` HMAC primitives over Web Crypto).
 2. Load the SDK with `importOptional` from core so the package stays an optional peer dependency.
 3. Add a facade `src/<name>.ts` and wire it into `src/factory.ts`.
 4. `npm run check` — the architecture test proves the driver folder stayed self-contained.

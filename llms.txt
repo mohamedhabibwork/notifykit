@@ -1,6 +1,6 @@
 # notifykit (@mohamedhabibwork/notifykit)
 
-> Unified TypeScript notifications across push (FCM, APNs, Huawei), web push, email (SMTP), messaging (Telegram, Slack), and custom providers — one async `send()` contract with provider-native options preserved under a `native` key instead of being flattened. The package itself has **zero runtime dependencies**: fetch-based providers need nothing at all and SDK-backed providers dynamically load their optional peer only when created. Named multi-provider managers, templates, routing, middleware/hooks, batch sends, timeouts, cancellation, and retry classification. Node.js >= 20, Bun, Deno. Dual ESM/CJS with full TypeScript declarations.
+> Unified TypeScript notifications across push (FCM, APNs, Huawei), web push, email (SMTP, Resend), messaging (Telegram, Slack, WhatsApp Cloud API, Twilio, Vonage SMS), and custom providers — one async `send()` contract with provider-native options preserved under a `native` key instead of being flattened. The package itself has **zero runtime dependencies**: fetch-based providers need nothing at all and SDK-backed providers dynamically load their optional peer only when created. Named multi-provider managers, templates, routing, middleware/hooks, batch sends, timeouts, cancellation, and retry classification. Node.js >= 20, Bun, Deno. Dual ESM/CJS with full TypeScript declarations.
 
 ## Install
 
@@ -9,12 +9,13 @@ npm install @mohamedhabibwork/notifykit
 # Install a provider SDK only when you use that provider (optional peers):
 # FCM:       npm i firebase-admin        | Email: npm i nodemailer
 # Web Push:  npm i web-push              | APNs:  npm i @parse/node-apn
-# Telegram / Slack / Huawei: none — plain fetch
+# Telegram / Slack / Huawei / WhatsApp Cloud API / Twilio / Vonage / Resend: none — plain fetch
 ```
 
 **Entrypoints** (tree-shakeable): root (factory, manager, errors, templates,
 routing), `.../fcm`, `.../huawei`, `.../webpush`, `.../email`, `.../telegram`,
-`.../apns`, `.../slack`, `.../custom`, `.../testing` (fake notifier/driver).
+`.../apns`, `.../slack`, `.../whatsapp`, `.../twilio`, `.../vonage`,
+`.../resend`, `.../custom`, `.../testing` (fake notifier/driver).
 
 A missing optional SDK throws `NotificationConfigError` whose message contains
 the exact `npm install` command — never a module-not-found crash.
@@ -66,7 +67,8 @@ notifier.native();                             // typed native client (admin SDK
 
 - `to` is provider-shaped: `{ chatId }` (Telegram), `{ token }` / `{ tokens }` /
   `{ topic }` / `{ condition }` (FCM), `{ deviceId, deviceIdType }` (Huawei),
-  `{ email }` (SMTP), `{ subscription }` (Web Push), `{ channel }` (Slack).
+  `{ email }` (SMTP, Resend), `{ subscription }` (Web Push), `{ channel }` (Slack),
+  `{ phoneNumber }` (WhatsApp, Twilio, Vonage).
 - Recipients are normalized: string emails/chat ids become structured `to`.
 - `result.retryable` tells you whether a failure is worth requeueing.
 - Every send accepts timeouts and `AbortSignal` cancellation (via send options).
@@ -144,13 +146,17 @@ notifier.failNext(new Error("boom"));           // simulate failures; setLatency
 ## Runtime support
 
 - Node.js >= 20 (CI on 20/22/24/26), Bun, Deno. Dual ESM/CJS.
-- Fetch-based providers (Telegram, Slack, Huawei) work on all runtimes with
-  zero dependencies; SDK-backed providers load their peer on creation only.
+- Fetch-based providers (Telegram, Slack, Huawei, WhatsApp Cloud API, Twilio,
+  Vonage, Resend) work on all runtimes with zero dependencies; SDK-backed
+  providers load their peer on creation only.
 
 ## Links
 
 - npm: https://www.npmjs.com/package/@mohamedhabibwork/notifykit
 - README with full examples: ./README.md (also in the published tarball)
-- Guides: ./docs/providers.md, ./docs/frameworks.md (Express, Fastify, NestJS,
-  Hono, Next.js, Elysia), ./docs/examples.md (end-to-end apps),
+- Guides: ./docs/providers.md (indexes one guide per provider — fcm.md,
+  huawei.md, webpush.md, email.md, telegram.md, apns.md, slack.md, whatsapp.md,
+  twilio.md, vonage.md, resend.md — each with config, templates, delivery-status
+  callbacks, errors, and full examples), ./docs/frameworks.md (Express, Fastify,
+  NestJS, Hono, Next.js, Elysia), ./docs/examples.md (end-to-end apps),
   ./docs/custom-providers.md, ./docs/architecture.md (shipped in the tarball)

@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Features
+
+- **fcm:** Add `native.apns.collapseId` and `native.apns.threadId` shorthands, mapped to the APNs `apns-collapse-id` header and `aps["thread-id"]` payload so iOS notification trays collapse and group correctly
+- **fcm:** Default `android.priority`, `android.ttl`, and `android.collapseKey` from core-level `priority`, `ttl`, and `collapseKey` (overridable via `native.android`)
+- **apns:** Add `native.threadId`, `sound`, `badge`, `contentAvailable`, `mutableContent`, `category`, `urlArgs`, and a custom `alert` object; core `ttl` now derives the APNs `expiry`
+- **email:** Map core `priority` to SMTP precedence headers and add `native.priority`, `inReplyTo`, `references`, plus `cid`/`encoding` attachment fields
+- **telegram:** Add typed `entities`, `link_preview_options`, `message_effect_id`, and `reply_parameters` options
+- **slack:** Add typed `as_user`, `link_names`, `metadata`, and `parse` options
+- **webpush:** Classify delivery failures by HTTP status (429/5xx retryable, 404/410 permanent) and default `TTL` from core `ttl`
+- **huawei:** Add `{ condition }` recipient for Push Kit condition expressions
+
 ## [0.3.2] - 2026-09-12
 
 ### Features

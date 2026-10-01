@@ -6,7 +6,7 @@ import {
 } from "../../core/errors.js";
 import type { NotificationProvider } from "../../core/provider.js";
 import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
-import { withTimeout } from "../../core/utils.js";
+import { assertSecureEndpoint, withTimeout } from "../../core/utils.js";
 import type { SlackConfig } from "./config.js";
 import type { SlackNativeOptions, SlackRecipient, SlackResponse } from "./types.js";
 
@@ -17,7 +17,10 @@ export async function createSlackProvider(
 > {
   if (!config.botToken && !config.webhookUrl)
     throw new Error("Slack requires botToken or webhookUrl.");
-  const apiUrl = (config.apiUrl ?? "https://slack.com/api").replace(/\/$/, "");
+  const apiUrl = assertSecureEndpoint(
+    (config.apiUrl ?? "https://slack.com/api").replace(/\/$/, ""),
+    "Slack",
+  );
   return {
     name: "slack",
     capabilities: {
@@ -37,6 +40,7 @@ export async function createSlackProvider(
         "webhookUrl" in message.to
           ? (message.to.webhookUrl ?? config.webhookUrl)
           : config.webhookUrl;
+      if (webhookUrl !== undefined) assertSecureEndpoint(webhookUrl, "Slack webhook");
       const text = message.notification?.body ?? message.notification?.title ?? "";
       const payload = { text, ...message.native };
       let response: Response;

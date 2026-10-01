@@ -14,7 +14,14 @@ type Notification = {
   priority?: number;
   collapseId?: string;
   pushType?: string;
-  alert?: { title?: string; body?: string };
+  threadId?: string;
+  sound?: string;
+  badge?: number;
+  contentAvailable?: boolean;
+  mutableContent?: boolean;
+  category?: string;
+  urlArgs?: readonly string[];
+  alert?: string | ({ title?: string; body?: string } & Record<string, unknown>);
   payload?: Record<string, unknown>;
 };
 export async function createApnsProvider(
@@ -58,14 +65,25 @@ export async function createApnsProvider(
       const note = new apn.Notification();
       const native = message.native;
       note.topic = native?.topic;
-      note.expiry = native?.expiration;
+      note.expiry =
+        native?.expiration ??
+        (message.ttl ? Math.floor(Date.now() / 1000) + message.ttl : undefined);
       note.priority = native?.priority;
       note.collapseId = native?.collapseId ?? message.collapseKey;
       note.pushType = native?.pushType;
-      note.alert = message.notification && {
-        title: message.notification.title,
-        body: message.notification.body,
-      };
+      note.threadId = native?.threadId;
+      note.sound = native?.sound;
+      note.badge = native?.badge;
+      note.contentAvailable = native?.contentAvailable;
+      note.mutableContent = native?.mutableContent;
+      note.category = native?.category;
+      note.urlArgs = native?.urlArgs ? [...native.urlArgs] : undefined;
+      note.alert =
+        native?.alert ??
+        (message.notification && {
+          title: message.notification.title,
+          body: message.notification.body,
+        });
       note.payload = { ...message.data, ...native?.payload };
       try {
         const response = await client.send(

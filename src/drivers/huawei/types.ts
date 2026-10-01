@@ -1,4 +1,8 @@
-export type HuaweiRecipient = { token: string } | { tokens: readonly string[] } | { topic: string };
+export type HuaweiRecipient =
+  | { token: string }
+  | { tokens: readonly string[] }
+  | { topic: string }
+  | { condition: string };
 export interface HuaweiAccessToken {
   accessToken: string;
   /** Unix timestamp in milliseconds. */

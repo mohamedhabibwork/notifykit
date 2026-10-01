@@ -6,6 +6,30 @@ import type {
   NotificationResult,
   SendOptions,
 } from "./types.js";
+/**
+ * Configuration-time guard for driver endpoints: requires https (bearer
+ * tokens and message bodies travel on these URLs) and rejects hosts that
+ * contain whitespace or control characters. `rawUrl` is returned unchanged
+ * so drivers can keep using the normalized value.
+ */
+export function assertSecureEndpoint(rawUrl: string, provider: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`${provider} endpoint "${rawUrl.slice(0, 128)}" is not a valid URL.`);
+  }
+  if (parsed.protocol !== "https:")
+    throw new Error(`${provider} endpoint must use https (got ${parsed.protocol}).`);
+  if (
+    parsed.hostname === "" ||
+    [...parsed.hostname].some(
+      (char) => (char.codePointAt(0) ?? 0) < 0x21 || char.codePointAt(0) === 0x7f,
+    )
+  )
+    throw new Error(`${provider} endpoint host is invalid.`);
+  return rawUrl;
+}
 export function validateMessage<TRecipient, TNative>(
   message: NotificationMessage<TRecipient, TNative>,
   provider: string,

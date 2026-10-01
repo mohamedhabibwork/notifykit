@@ -73,6 +73,9 @@ export async function createEmailProvider(
           replyTo: native.replyTo && address(native.replyTo),
           cc: native.cc && addresses(native.cc),
           bcc: native.bcc && addresses(native.bcc),
+          priority: native.priority ?? message.priority,
+          inReplyTo: native.inReplyTo,
+          references: native.references?.join(" "),
           headers: native.headers,
           attachments: native.attachments,
         });

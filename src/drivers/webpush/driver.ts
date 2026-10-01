@@ -55,6 +55,8 @@ export async function createWebPushProvider(
       _options?: SendOptions,
     ): Promise<NotificationResult<"webpush", WebPushResponse>> {
       try {
+        const options = { ...message.native };
+        if (options.TTL == null && message.ttl != null) options.TTL = message.ttl;
         const native = await client.sendNotification(
           message.to,
           JSON.stringify({
@@ -62,13 +64,15 @@ export async function createWebPushProvider(
             data: message.data,
             actions: message.actions,
           }),
-          message.native,
+          options,
         );
         return { ok: true, provider: "webpush", status: "accepted", native };
       } catch (cause) {
+        const statusCode = (cause as { statusCode?: number }).statusCode;
         throw new NotificationProviderError("Web Push delivery request failed.", {
           provider: "webpush",
-          retryable: false,
+          // 429 and 5xx are transient; 404/410 mean the subscription is gone.
+          retryable: statusCode === 429 || (statusCode != null && statusCode >= 500),
           cause,
         });
       }

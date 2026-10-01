@@ -6,7 +6,7 @@ import {
 } from "../../core/errors.js";
 import type { NotificationProvider } from "../../core/provider.js";
 import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
-import { withTimeout } from "../../core/utils.js";
+import { assertSecureEndpoint, withTimeout } from "../../core/utils.js";
 import type { TelegramConfig } from "./config.js";
 import type { TelegramNativeOptions, TelegramRecipient, TelegramResponse } from "./types.js";
 export async function createTelegramProvider(
@@ -20,7 +20,10 @@ export async function createTelegramProvider(
     TelegramResponse
   >
 > {
-  const apiUrl = (config.apiUrl ?? "https://api.telegram.org").replace(/\/$/, "");
+  const apiUrl = assertSecureEndpoint(
+    (config.apiUrl ?? "https://api.telegram.org").replace(/\/$/, ""),
+    "Telegram",
+  );
   return {
     name: "telegram",
     capabilities: {

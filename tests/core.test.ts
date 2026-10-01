@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { NotificationPayloadError } from "../src/core/errors.js";
+import { assertSecureEndpoint } from "../src/core/utils.js";
 import { createFakeNotifier } from "../src/testing.js";
+describe("assertSecureEndpoint", () => {
+  it("accepts https endpoints and returns them unchanged", () => {
+    expect(assertSecureEndpoint("https://api.example.com", "Test")).toBe("https://api.example.com");
+  });
+  it("rejects plain http and malformed urls", () => {
+    expect(() => assertSecureEndpoint("http://api.example.com", "Test")).toThrow(/https/);
+    expect(() => assertSecureEndpoint("not a url", "Test")).toThrow(/valid URL/);
+    expect(() => assertSecureEndpoint("https://ho t.com", "Test")).toThrow(/valid URL/);
+  });
+});
 describe("fake notifier", () => {
   it("records and batches messages", async () => {
     const notifier = createFakeNotifier<{ id: string }>();

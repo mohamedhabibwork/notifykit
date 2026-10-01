@@ -23,6 +23,34 @@ import type { ApnsConfig, ApnsNativeOptions, ApnsRecipient, ApnsResponse } from 
 import { createApnsProvider } from "./drivers/apns/driver.js";
 import type { SlackConfig, SlackNotifier } from "./slack.js";
 import { createSlackProvider } from "./drivers/slack/driver.js";
+import type {
+  WhatsAppConfig,
+  WhatsAppNativeOptions,
+  WhatsAppRecipient,
+  WhatsAppResponse,
+} from "./whatsapp.js";
+import { createWhatsAppProvider } from "./drivers/whatsapp/driver.js";
+import type {
+  TwilioConfig,
+  TwilioNativeOptions,
+  TwilioRecipient,
+  TwilioResponse,
+} from "./twilio.js";
+import { createTwilioProvider } from "./drivers/twilio/driver.js";
+import type {
+  VonageConfig,
+  VonageNativeOptions,
+  VonageRecipient,
+  VonageResponse,
+} from "./vonage.js";
+import { createVonageProvider } from "./drivers/vonage/driver.js";
+import type {
+  ResendConfig,
+  ResendNativeOptions,
+  ResendRecipient,
+  ResendResponse,
+} from "./resend.js";
+import { createResendProvider } from "./drivers/resend/driver.js";
 import type { NotificationDriverDefinition } from "./core/provider.js";
 export type BuiltInNotificationConfig =
   | FcmConfig
@@ -31,7 +59,11 @@ export type BuiltInNotificationConfig =
   | EmailConfig
   | TelegramConfig
   | ApnsConfig
-  | SlackConfig;
+  | SlackConfig
+  | WhatsAppConfig
+  | TwilioConfig
+  | VonageConfig
+  | ResendConfig;
 export type NotifierForConfig<T> = T extends FcmConfig
   ? FcmNotifier
   : T extends HuaweiConfig
@@ -52,7 +84,39 @@ export type NotifierForConfig<T> = T extends FcmConfig
             ? Notifier<"apns", ApnsRecipient, ApnsConfig, ApnsNativeOptions, ApnsResponse>
             : T extends SlackConfig
               ? SlackNotifier
-              : never;
+              : T extends WhatsAppConfig
+                ? Notifier<
+                    "whatsapp",
+                    WhatsAppRecipient,
+                    WhatsAppConfig,
+                    WhatsAppNativeOptions,
+                    WhatsAppResponse
+                  >
+                : T extends TwilioConfig
+                  ? Notifier<
+                      "twilio",
+                      TwilioRecipient,
+                      TwilioConfig,
+                      TwilioNativeOptions,
+                      TwilioResponse
+                    >
+                  : T extends VonageConfig
+                    ? Notifier<
+                        "vonage",
+                        VonageRecipient,
+                        VonageConfig,
+                        VonageNativeOptions,
+                        VonageResponse
+                      >
+                    : T extends ResendConfig
+                      ? Notifier<
+                          "resend",
+                          ResendRecipient,
+                          ResendConfig,
+                          ResendNativeOptions,
+                          ResendResponse
+                        >
+                      : never;
 export async function createNotifier<const TConfig extends BuiltInNotificationConfig>(
   config: TConfig,
 ): Promise<NotifierForConfig<TConfig>>;
@@ -94,6 +158,18 @@ export async function createNotifier(
       break;
     case "slack":
       provider = await createSlackProvider(config as SlackConfig);
+      break;
+    case "whatsapp":
+      provider = await createWhatsAppProvider(config as WhatsAppConfig);
+      break;
+    case "twilio":
+      provider = await createTwilioProvider(config as TwilioConfig);
+      break;
+    case "vonage":
+      provider = await createVonageProvider(config as VonageConfig);
+      break;
+    case "resend":
+      provider = await createResendProvider(config as ResendConfig);
       break;
     default: {
       const providers = (

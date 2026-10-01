@@ -6,7 +6,7 @@ import {
 } from "../../core/errors.js";
 import type { NotificationProvider } from "../../core/provider.js";
 import type { NotificationMessage, NotificationResult, SendOptions } from "../../core/types.js";
-import { withTimeout } from "../../core/utils.js";
+import { assertSecureEndpoint, withTimeout } from "../../core/utils.js";
 import type { HuaweiConfig } from "./config.js";
 import type {
   HuaweiAccessToken,
@@ -20,10 +20,13 @@ export async function createHuaweiProvider(
 ): Promise<
   NotificationProvider<"huawei", HuaweiRecipient, HuaweiConfig, HuaweiNativeOptions, HuaweiResponse>
 > {
-  const endpoint = (config.endpoint ?? "https://push-api.cloud.huawei.com").replace(/\/$/, "");
-  const authEndpoint = (config.authEndpoint ?? "https://oauth-login.cloud.huawei.com").replace(
-    /\/$/,
-    "",
+  const endpoint = assertSecureEndpoint(
+    (config.endpoint ?? "https://push-api.cloud.huawei.com").replace(/\/$/, ""),
+    "Huawei",
+  );
+  const authEndpoint = assertSecureEndpoint(
+    (config.authEndpoint ?? "https://oauth-login.cloud.huawei.com").replace(/\/$/, ""),
+    "Huawei auth",
   );
   const refreshSkewMs = config.auth?.refreshSkewMs ?? 30_000;
   if (!Number.isFinite(refreshSkewMs) || refreshSkewMs < 0)
@@ -94,6 +97,7 @@ export async function createHuaweiProvider(
       batch: false,
       token: true,
       topic: true,
+      condition: true,
       notification: true,
       data: true,
       ttl: true,
@@ -116,6 +120,7 @@ export async function createHuaweiProvider(
         message: {
           token: recipient?.join(","),
           topic: "topic" in message.to ? message.to.topic : undefined,
+          condition: "condition" in message.to ? message.to.condition : undefined,
           notification: message.notification && {
             title: message.notification.title,
             body: message.notification.body,

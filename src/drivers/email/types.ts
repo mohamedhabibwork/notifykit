@@ -7,11 +7,19 @@ export interface EmailNativeOptions {
   replyTo?: EmailAddress;
   cc?: EmailRecipient;
   bcc?: EmailRecipient;
+  /** SMTP precedence header: "high" adds Importance/Priority headers, "low" adds Precedence: bulk. */
+  priority?: "high" | "normal" | "low";
+  /** Message-ID this mail replies to (paired with `references` for mail clients' threading). */
+  inReplyTo?: string;
+  /** Message-IDs of the thread this mail belongs to. */
+  references?: readonly string[];
   headers?: Record<string, string>;
   attachments?: readonly {
     filename?: string;
     content: string | Uint8Array;
     contentType?: string;
+    cid?: string;
+    encoding?: string;
   }[];
 }
 export interface EmailResponse {

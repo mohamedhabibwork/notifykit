@@ -13,6 +13,17 @@ export interface FcmTokenCache {
   set(token: FcmAccessToken): Promise<void>;
 }
 export interface FcmApnsOptions {
+  /**
+   * APNs `apns-collapse-id` header. Notifications sharing this id replace each
+   * other in the iOS Notification Center tray; without it every message stacks.
+   * FCM's `android.collapseKey` does not map to this.
+   */
+  collapseId?: string;
+  /**
+   * APNs `thread-id` in the `aps` payload. Groups related notifications into
+   * one stack in the iOS Notification Center.
+   */
+  threadId?: string;
   headers?: Record<string, string>;
   payload?: {
     aps?: {

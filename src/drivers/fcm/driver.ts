@@ -35,9 +35,27 @@ function fcmNativeTarget(to: FcmRecipient): Record<string, unknown> {
   if ("condition" in to) return { condition: to.condition };
   return {};
 }
-function fcmToNative(
+function fcmToApnsNative(apns: FcmNativeOptions["apns"]): Record<string, unknown> | undefined {
+  if (!apns) return undefined;
+  const headers = { ...apns.headers };
+  if (apns.collapseId) headers["apns-collapse-id"] = apns.collapseId;
+  const payload = { ...apns.payload };
+  if (apns.threadId) payload.aps = { ...apns.payload?.aps, "thread-id": apns.threadId };
+  return { headers, payload, fcmOptions: apns.fcmOptions };
+}
+/** Exposed for tests: maps a notification to FCM's HTTP v1 message shape. */
+export function fcmToNative(
   message: NotificationMessage<FcmRecipient, FcmNativeOptions>,
 ): Record<string, unknown> {
+  const android = { ...message.native?.android };
+  android.priority ??= message.priority;
+  android.ttl ??= message.ttl;
+  android.collapseKey ??= message.collapseKey;
+  const hasAndroid =
+    message.native?.android != null ||
+    message.priority != null ||
+    message.ttl != null ||
+    message.collapseKey != null;
   return {
     ...fcmNativeTarget(message.to),
     notification: message.notification && {
@@ -48,8 +66,8 @@ function fcmToNative(
     data:
       message.data &&
       Object.fromEntries(Object.entries(message.data).map(([key, value]) => [key, String(value)])),
-    android: message.native?.android,
-    apns: message.native?.apns,
+    android: hasAndroid ? android : undefined,
+    apns: fcmToApnsNative(message.native?.apns),
     webpush: message.native?.webpush,
     fcmOptions: message.native?.fcmOptions,
   };

@@ -5,6 +5,19 @@ import {
 } from "./factory.js";
 import type { NotificationResult } from "./core/types.js";
 import { noopLogger, toError, type KitLogger } from "./core/logger.js";
+import { sendWithFallback } from "./policies/fallback.js";
+export interface SendMultiOptions {
+  /** Return false to skip a channel (e.g. from `createPreferenceFilter`). */
+  filter?: (provider: string, category?: string) => boolean;
+  /** Category passed to `filter`, e.g. "marketing". */
+  category?: string;
+}
+export interface ManagerFallbackOutcome {
+  result?: NotificationResult;
+  /** Name of the provider that succeeded. */
+  provider?: string;
+  errors: readonly unknown[];
+}
 type ProviderMap = Record<string, BuiltInNotificationConfig>;
 type MultiChannel<T extends ProviderMap> = {
   [K in keyof T]: { provider: K; message: Parameters<NotifierForConfig<T[K]>["send"]>[0] };
@@ -62,12 +75,34 @@ export class NotificationManager<
   }
   async sendMulti(
     channels: readonly MultiChannel<TProviders>[],
+    options?: SendMultiOptions,
   ): Promise<readonly NotificationResult[]> {
+    const selected = options?.filter
+      ? channels.filter(({ provider }) => options.filter!(String(provider), options.category))
+      : channels;
     return Promise.all(
-      channels.map(async ({ provider, message }) =>
+      selected.map(async ({ provider, message }) =>
         (await this.provider(provider)).send(message as never),
       ),
     );
+  }
+  /** Sends through each channel in order until one succeeds (e.g. push, then SMS, then email). */
+  async sendFallback(
+    channels: readonly MultiChannel<TProviders>[],
+  ): Promise<ManagerFallbackOutcome> {
+    const outcome = await sendWithFallback<NotificationResult>(
+      channels.map(
+        ({ provider, message }) =>
+          async () =>
+            (await this.provider(provider)).send(message as never),
+      ),
+    );
+    const winner = outcome.attempt >= 0 ? channels[outcome.attempt] : undefined;
+    return {
+      result: outcome.result,
+      provider: winner ? String(winner.provider) : undefined,
+      errors: outcome.errors,
+    };
   }
   async close(): Promise<void> {
     if (this.closed) return;

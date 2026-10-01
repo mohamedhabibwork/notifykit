@@ -73,6 +73,8 @@ export interface NotificationSendContext {
   notificationId?: string;
   traceId?: string;
   metadata?: Readonly<Record<string, unknown>>;
+  /** The message being sent (read-only; middleware must not mutate it). */
+  message?: Readonly<NotificationMessage<unknown, unknown>>;
 }
 export type NotificationMiddleware = (
   context: NotificationSendContext,

@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
  *   drivers/X — one folder per provider. May use core and its own folder only.
  *   routing,
  *   templates — pure policy over core. May use core only.
+ *   policies  — reusable middleware/delivery policies. May use core and itself.
  *   testing   — fakes and contract helpers. May use core and itself, never drivers.
  *   root      — composition layer (index, factory, manager, public facades). Unrestricted.
  *
@@ -38,6 +39,10 @@ const rules: Rule[] = [
   {
     applies: (f) => f.startsWith("routing/") || f.startsWith("templates/"),
     allows: (_f, t) => t.startsWith("core/"),
+  },
+  {
+    applies: (f) => f.startsWith("policies/"),
+    allows: (_f, t) => t.startsWith("core/") || t.startsWith("policies/"),
   },
   {
     applies: (f) => f.startsWith("testing/"),

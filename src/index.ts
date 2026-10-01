@@ -4,6 +4,7 @@ export {
   type NotifierForConfig,
 } from "./factory.js";
 export { NotificationManager, createNotificationManager } from "./manager.js";
+export type { ManagerFallbackOutcome, SendMultiOptions } from "./manager.js";
 export { noopLogger, type KitLogger } from "./core/logger.js";
 export { Notifier } from "./core/notifier.js";
 export type { NotificationProvider, NotificationDriverDefinition } from "./core/provider.js";
@@ -46,3 +47,20 @@ export type {
   SlackRecipient,
   SlackResponse,
 } from "./slack.js";
+export {
+  createPreferenceFilter,
+  dedupeMiddleware,
+  dryRunMiddleware,
+  rateLimitMiddleware,
+  retryMiddleware,
+  sendWithFallback,
+} from "./policies/index.js";
+export type {
+  ChannelFilter,
+  DedupeOptions,
+  DryRunOptions,
+  FallbackOutcome,
+  NotificationPreferences,
+  RateLimitOptions,
+  RetryOptions,
+} from "./policies/index.js";

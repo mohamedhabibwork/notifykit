@@ -44,6 +44,7 @@ export class Notifier<TName extends string, TRecipient, TConfig, TNative, TRespo
       operation: "send",
       startedAt: performance.now(),
       metadata: options?.metadata,
+      message,
     };
     await this.hooks?.beforeSend?.(context);
     const dispatch = async (index: number): Promise<NotificationResult<TName, TResponse>> =>

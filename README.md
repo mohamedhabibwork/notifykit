@@ -16,6 +16,8 @@
 
 NotifyKit gives applications one small notification contract while keeping advanced provider capabilities under `native`. Change the configured provider and TypeScript changes the valid recipient shape, native payload, response type, and capabilities with it.
 
+Every supported use case, with a runnable example, is listed in [docs/use-cases.md](docs/use-cases.md).
+
 ## Features
 
 - First-party FCM, Huawei Push Kit, Web Push, SMTP email, Telegram, Slack, and APNs providers.
@@ -457,6 +459,35 @@ telegram.use(async (context, next) => {
 
 Create a `Notifier` with hooks when you need lifecycle callbacks around a provider. Middleware is generally the more flexible option.
 
+## Delivery policies: retries, rate limits, dedupe, dry-run, fallbacks
+
+Built-in, provider-agnostic middleware and helpers cover the common production concerns:
+
+```ts
+import {
+  dedupeMiddleware,
+  dryRunMiddleware,
+  rateLimitMiddleware,
+  retryMiddleware,
+} from "@mohamedhabibwork/notifykit";
+
+telegram
+  .use(dryRunMiddleware({ enabled: process.env.NOTIFY_DRY_RUN === "1" }))
+  .use(dedupeMiddleware({ ttl: 60_000 })) // keyed on message.idempotencyKey
+  .use(rateLimitMiddleware({ limit: 30, interval: 1_000 }))
+  .use(retryMiddleware({ retries: 3, minDelay: 250 }));
+
+const outcome = await notifications.sendFallback([
+  { provider: "alerts", message: { to: { chatId: 1234 }, notification: { body: "Code: 9921" } } },
+  {
+    provider: "transactionalEmail",
+    message: { to: "user@example.com", notification: { body: "Code: 9921" } },
+  },
+]);
+```
+
+See [docs/use-cases.md](docs/use-cases.md) for every supported use case with an example.
+
 ## Errors and retry classification
 
 NotifyKit preserves the original provider error under `cause` or `native` and exposes normalized error classes:
@@ -565,9 +596,11 @@ const templates = createNotificationTemplates({
 const message = templates.render("orderShipped", { orderId: "ORD-1001" });
 
 const router = createNotificationRouter({
-  orderShipped: ({ email }: { email: string }) => [
-    { provider: "email", message: { to: email, notification: message } },
-  ],
+  routes: {
+    orderShipped: ({ email }: { email: string }) => [
+      { provider: "email", message: { to: email, notification: message } },
+    ],
+  },
 });
 
 const channels = await router.resolve("orderShipped", { email: "customer@example.com" });

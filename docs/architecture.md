@@ -11,6 +11,7 @@ Dependencies point one way, bottom-up:
 | `src/core/`                      | Contracts, errors, utils, dynamic-import helper            | itself only                  |
 | `src/drivers/<provider>/`        | One folder per provider (config, driver, types)            | core + its own folder        |
 | `src/routing/`, `src/templates/` | Pure policy over core                                      | core only                    |
+| `src/policies/`                  | Retry, rate-limit, dedupe, dry-run, fallback, preferences  | core + itself                |
 | `src/testing/`                   | Fake driver/provider for consumers                         | core + itself, never drivers |
 | `src/*.ts` (root)                | Composition: index, factory, manager, per-provider facades | anything                     |
 

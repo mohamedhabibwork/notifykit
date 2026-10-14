@@ -291,6 +291,7 @@ app.listen(3000);
 import { createNotificationManager } from "@mohamedhabibwork/notifykit";
 
 const notifications = createNotificationManager({
+  default: "twilio",
   providers: {
     twilio: {
       type: "twilio",

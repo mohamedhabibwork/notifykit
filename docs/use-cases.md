@@ -464,7 +464,11 @@ See [custom-providers.md](custom-providers.md).
 ## 25. Logging
 
 ```ts
-const notifications = createNotificationManager({ providers, logger: myKitLogger });
+const notifications = createNotificationManager({
+  providers,
+  default: "alerts",
+  logger: myKitLogger,
+});
 ```
 
 Any object with `debug/info/warn/error` works (e.g. loggerkit); provider creation failures are logged.

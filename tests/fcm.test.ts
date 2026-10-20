@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fcmToNative } from "../src/drivers/fcm/driver.js";
+
+vi.mock("../src/core/dynamic-import.js", () => ({
+  importOptional: vi.fn(),
+}));
 
 describe("FCM APNs collapse/thread mapping", () => {
   it("maps collapseId and threadId to the APNs header and aps payload", () => {
@@ -92,5 +96,53 @@ describe("FCM APNs collapse/thread mapping", () => {
     });
 
     expect(message.android).toBeUndefined();
+  });
+});
+
+describe("FCM provider admin module resolution", () => {
+  it("resolves cert from credential.cert on the ESM interop default namespace", async () => {
+    const { createFcmProvider } = await import("../src/drivers/fcm/driver.js");
+    const { importOptional } = await import("../src/core/dynamic-import.js");
+    const certCalls: unknown[] = [];
+    const firebaseNamespace = {
+      __esModule: true,
+      INTERNAL: {},
+      Promise,
+      SDK_VERSION: "13.10.0-test",
+      credential: {
+        cert: (value: unknown) => {
+          certCalls.push(value);
+          return {
+            getAccessToken: async () => ({ access_token: "token", expires_in: 3600 }),
+          };
+        },
+      },
+      default: null as unknown,
+      initializeApp: () => ({ name: "test-app" }),
+      app: (name?: string) => ({ name: name ?? "test-app" }),
+      messaging: () => ({ send: async () => "projects/p/messages/1" }),
+    };
+    firebaseNamespace.default = firebaseNamespace;
+    const importMock = vi.mocked(importOptional);
+    importMock.mockResolvedValue({
+      INTERNAL: firebaseNamespace.INTERNAL,
+      Promise,
+      SDK_VERSION: firebaseNamespace.SDK_VERSION,
+      credential: firebaseNamespace.credential,
+      default: firebaseNamespace,
+    } as never);
+
+    const provider = await createFcmProvider({
+      type: "fcm",
+      credential: {
+        serviceAccount: {
+          clientEmail: "sender@trips.iam.gserviceaccount.com",
+          projectId: "trips",
+        },
+      },
+    } as Parameters<typeof createFcmProvider>[0]);
+
+    expect(certCalls).toHaveLength(1);
+    expect(provider).toBeDefined();
   });
 });

@@ -20,6 +20,13 @@ type FirebaseApp = { name?: string };
 type FirebaseCredential = {
   getAccessToken(): Promise<{ access_token: string; expires_in?: number }>;
 };
+type FirebaseAdminLike = {
+  initializeApp(options: unknown, name?: string): FirebaseApp;
+  cert?(value: unknown): FirebaseCredential;
+  credential?: { cert(value: unknown): FirebaseCredential };
+  app?(name?: string): FirebaseApp;
+  messaging(app?: FirebaseApp): FirebaseMessaging;
+};
 type FcmBatchResponse = {
   responses: Array<{ success: boolean; messageId?: string; error?: unknown }>;
 };
@@ -75,23 +82,31 @@ export function fcmToNative(
 export async function createFcmProvider(
   config: FcmConfig,
 ): Promise<NotificationProvider<"fcm", FcmRecipient, FcmConfig, FcmNativeOptions, FcmResponse>> {
-  let admin: {
-    initializeApp(options: unknown, name?: string): FirebaseApp;
-    cert(value: unknown): FirebaseCredential;
-    app?(name?: string): FirebaseApp;
-    messaging(app?: FirebaseApp): FirebaseMessaging;
-  };
+  let imported: unknown;
   try {
-    admin = (await importOptional("firebase-admin")) as typeof admin;
+    imported = await importOptional("firebase-admin");
   } catch (cause) {
     throw new NotificationConfigError(
       'FCM provider requires "firebase-admin". Install it with: npm install firebase-admin',
       { provider: "fcm", retryable: false, cause },
     );
   }
+  // `import("firebase-admin")` yields the CJS interop namespace in ESM runtimes (Bun, Node),
+  // where the SDK methods live on `default` and `cert` only under `credential.cert`.
+  const adminModule = imported as { default?: FirebaseAdminLike } & FirebaseAdminLike;
+  const admin: FirebaseAdminLike = adminModule.default ?? adminModule;
+  if (typeof admin.cert !== "function" && typeof admin.credential?.cert === "function") {
+    admin.cert = (value: unknown) => admin.credential!.cert(value);
+  }
+  if (typeof admin.cert !== "function") {
+    throw new NotificationConfigError(
+      "FCM provider could not resolve firebase-admin's credential factory (admin.cert / admin.credential.cert).",
+      { provider: "fcm", retryable: false },
+    );
+  }
   const credential =
     "serviceAccount" in config.credential ? config.credential.serviceAccount : config.credential;
-  const firebaseCredential = admin.cert(credential);
+  const firebaseCredential = admin.cert!(credential);
   let app: FirebaseApp;
   try {
     app =
